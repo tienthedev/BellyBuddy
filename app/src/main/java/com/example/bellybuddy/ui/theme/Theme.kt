@@ -42,7 +42,7 @@ fun BellyBuddyTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.setStatusBarColor(colorScheme.primary.toArgb())  // Use direct setStatusBarColor (not deprecated)
+            window.statusBarColor = colorScheme.primary.toArgb()  // Use direct setStatusBarColor (not deprecated)
             val insetsController = WindowCompat.getInsetsController(window, view)
             insetsController.isAppearanceLightStatusBars = !darkTheme
         }
