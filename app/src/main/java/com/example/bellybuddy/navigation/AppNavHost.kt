@@ -151,7 +151,8 @@ fun AppNavHost(navController: NavHostController) {
                         BottomItem.Calendar -> go(Route.Calendar)
                         BottomItem.Bell     -> go(Route.Bell)
                     }
-                }
+                },
+                onBackClick = { go(Route.Grid) }
             )
         }
 

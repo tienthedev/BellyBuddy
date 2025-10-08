@@ -9,7 +9,9 @@ activityCompose = "1.11.0"
 junit = "4.13.2"
 lifecycleRuntimeKtx = "2.9.4"
 material = "1.13.0"
+materialIconsExtendedAndroid = "1.7.8"
 navigation = "2.9.5"
+
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
@@ -17,6 +19,7 @@ jetbrainsKotlinAndroid = { id = "org.jetbrains.kotlin.android", version.ref = "k
 composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 
 [libraries]
+androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIconsExtendedAndroid" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
