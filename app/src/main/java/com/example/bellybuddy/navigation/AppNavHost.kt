@@ -8,9 +8,13 @@ import com.example.bellybuddy.userint.screen.DashboardScreen
 import com.example.bellybuddy.userint.screen.LoginScreen
 import com.example.bellybuddy.userint.screen.SettingsScreen
 import com.example.bellybuddy.userint.screen.BottomItem
+import com.example.bellybuddy.userint.screen.BowelMovementScreen
 import com.example.bellybuddy.userint.screen.GridScreen
 import com.example.bellybuddy.userint.screen.CalendarScreen
+import com.example.bellybuddy.userint.screen.DailyJournalingScreen
+import com.example.bellybuddy.userint.screen.FoodLoggingScreen
 import com.example.bellybuddy.userint.screen.ReminderScreen
+import com.example.bellybuddy.userint.screen.SymptomScreen
 
 @Composable
 fun AppNavHost(navController: NavHostController) {
@@ -67,13 +71,17 @@ fun AppNavHost(navController: NavHostController) {
             GridScreen(
                 onSelectBottom = { item ->
                     when (item) {
-                        BottomItem.Home     -> go(Route.Dashboard)
+                        BottomItem.Home -> go(Route.Dashboard)
                         BottomItem.Settings -> go(Route.Settings)
-                        BottomItem.Grid     -> Unit
+                        BottomItem.Grid -> Unit
                         BottomItem.Calendar -> go(Route.Calendar)
-                        BottomItem.Bell     -> go(Route.Bell)
+                        BottomItem.Bell -> go(Route.Bell)
                     }
-                }
+                },
+                onJournalClick = { go(Route.DailyJournaling) },
+                onFoodLogClick = { go(Route.FoodLogging) },
+                onSymptomClick = { go(Route.SymptomTracking) },
+                onBowelMovementClick = { go(Route.BowelMovementTracking) }
             )
         }
 
@@ -104,5 +112,64 @@ fun AppNavHost(navController: NavHostController) {
                 }
             )
         }
+
+        composable(Route.DailyJournaling.path) {
+            DailyJournalingScreen(
+                onSelectBottom = { item ->
+                    when (item) {
+                        BottomItem.Home     -> go(Route.Dashboard)
+                        BottomItem.Settings -> go(Route.Settings)
+                        BottomItem.Grid     -> go(Route.Grid)
+                        BottomItem.Calendar -> go(Route.Calendar)
+                        BottomItem.Bell     -> go(Route.Bell)
+                    }
+                }
+            )
+        }
+
+        composable(Route.FoodLogging.path) {
+            FoodLoggingScreen(
+                onSelectBottom = { item ->
+                    when (item) {
+                        BottomItem.Home     -> go(Route.Dashboard)
+                        BottomItem.Settings -> go(Route.Settings)
+                        BottomItem.Grid     -> go(Route.Grid)
+                        BottomItem.Calendar -> go(Route.Calendar)
+                        BottomItem.Bell     -> go(Route.Bell)
+                    }
+                }
+            )
+        }
+
+        composable(Route.SymptomTracking.path) {
+            SymptomScreen(
+                onSelectBottom = { item ->
+                    when (item) {
+                        BottomItem.Home     -> go(Route.Dashboard)
+                        BottomItem.Settings -> go(Route.Settings)
+                        BottomItem.Grid     -> go(Route.Grid)
+                        BottomItem.Calendar -> go(Route.Calendar)
+                        BottomItem.Bell     -> go(Route.Bell)
+                    }
+                },
+                onBackClick = { go(Route.Grid) }
+            )
+        }
+
+        composable(Route.BowelMovementTracking.path) {
+            BowelMovementScreen(
+                onSelectBottom = { item ->
+                    when (item) {
+                        BottomItem.Home     -> go(Route.Dashboard)
+                        BottomItem.Settings -> go(Route.Settings)
+                        BottomItem.Grid     -> go(Route.Grid)
+                        BottomItem.Calendar -> go(Route.Calendar)
+                        BottomItem.Bell     -> go(Route.Bell)
+                    }
+                }
+            )
+        }
+
+
     }
 }
