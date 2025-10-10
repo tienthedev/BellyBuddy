@@ -7,4 +7,5 @@ sealed class Route(val path: String) {
     data object Grid: Route("grid")
     data object Calendar: Route("calendar")
     data object Bell: Route("bell")
+    data object Profile : Route("profile")
 }

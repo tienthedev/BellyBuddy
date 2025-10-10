@@ -44,8 +44,10 @@ import androidx.compose.ui.graphics.painter.Painter
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
+    onProfileClick: (() -> Unit)? = null,
     onBottomSelect: (BottomItem) -> Unit,
     onLogout: (() -> Unit)? = null // optional for later use
+
 ) {
     val calendar = Calendar.getInstance()
     val hour = calendar.get(Calendar.HOUR_OF_DAY)
@@ -77,8 +79,15 @@ fun DashboardScreen(
                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f),
                         modifier = Modifier
                             .padding(end = 12.dp)
-                            .size(36.dp)
-                    ) { /* avatar placeholder */ }
+                            .size(50.dp)
+                            .clickable { onProfileClick?.invoke() }
+                    ) { Image(
+                        painter = painterResource(id = R.drawable.profile_photo),
+                        contentDescription = "Profile",
+                        modifier = Modifier
+                            .fillMaxSize()
+                        )
+                    }
                 }
             )
         },

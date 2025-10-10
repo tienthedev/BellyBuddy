@@ -11,6 +11,7 @@ import com.example.bellybuddy.userint.screen.BottomItem
 import com.example.bellybuddy.userint.screen.GridScreen
 import com.example.bellybuddy.userint.screen.CalendarScreen
 import com.example.bellybuddy.userint.screen.ReminderScreen
+import com.example.bellybuddy.userint.screen.ProfileScreen
 
 @Composable
 fun AppNavHost(navController: NavHostController) {
@@ -36,6 +37,7 @@ fun AppNavHost(navController: NavHostController) {
 
         composable(Route.Dashboard.path) {
             DashboardScreen(
+                onProfileClick = { go(Route.Profile) },
                 onBottomSelect = { item ->
                     when (item) {
                         BottomItem.Home     -> go(Route.Dashboard) // already here; keeps highlight
@@ -104,5 +106,22 @@ fun AppNavHost(navController: NavHostController) {
                 }
             )
         }
+
+        composable(Route.Profile.path) {
+            ProfileScreen(
+                onSelectBottom = { item ->
+                    when (item) {
+                        BottomItem.Home -> go(Route.Dashboard)
+                        BottomItem.Settings -> go(Route.Settings)
+                        BottomItem.Grid -> go(Route.Grid)
+                        BottomItem.Calendar -> go(Route.Calendar)
+                        BottomItem.Bell -> go(Route.Bell)
+                    }
+                },
+                onBack = { go(Route.Dashboard) }, // back button
+                onGoToSettings = { go(Route.Settings) }
+            )
+        }
+
     }
 }
