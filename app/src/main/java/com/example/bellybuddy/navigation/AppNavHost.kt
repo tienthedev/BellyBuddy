@@ -16,6 +16,7 @@ import com.example.bellybuddy.userint.screen.FoodLoggingScreen
 import com.example.bellybuddy.userint.screen.ReminderScreen
 import com.example.bellybuddy.userint.screen.ProfileScreen
 import com.example.bellybuddy.userint.screen.SymptomScreen
+import com.example.bellybuddy.userint.screen.EditProfileScreen
 
 @Composable
 fun AppNavHost(navController: NavHostController) {
@@ -127,7 +128,8 @@ fun AppNavHost(navController: NavHostController) {
                     }
                 },
                 onBack = { go(Route.Dashboard) }, // back button
-                onGoToSettings = { go(Route.Settings) }
+                onGoToSettings = { go(Route.Settings) },
+                onEditProfile = { go(Route.EditProfile) }
             )
         }
 
@@ -188,6 +190,12 @@ fun AppNavHost(navController: NavHostController) {
             )
         }
 
+        composable(Route.EditProfile.path) {
+            EditProfileScreen(
+                onSave = { _, _, _ -> go(Route.Profile) },
+                onBack = { go(Route.Profile) }
+            )
+        }
 
     }
 }
