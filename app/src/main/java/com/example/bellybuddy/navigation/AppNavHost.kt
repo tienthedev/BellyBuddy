@@ -14,7 +14,9 @@ import com.example.bellybuddy.userint.screen.CalendarScreen
 import com.example.bellybuddy.userint.screen.DailyJournalingScreen
 import com.example.bellybuddy.userint.screen.FoodLoggingScreen
 import com.example.bellybuddy.userint.screen.ReminderScreen
+import com.example.bellybuddy.userint.screen.ProfileScreen
 import com.example.bellybuddy.userint.screen.SymptomScreen
+import com.example.bellybuddy.userint.screen.EditProfileScreen
 
 @Composable
 fun AppNavHost(navController: NavHostController) {
@@ -40,6 +42,7 @@ fun AppNavHost(navController: NavHostController) {
 
         composable(Route.Dashboard.path) {
             DashboardScreen(
+                onProfileClick = { go(Route.Profile) },
                 onBottomSelect = { item ->
                     when (item) {
                         BottomItem.Home     -> go(Route.Dashboard) // already here; keeps highlight
@@ -113,6 +116,23 @@ fun AppNavHost(navController: NavHostController) {
             )
         }
 
+        composable(Route.Profile.path) {
+            ProfileScreen(
+                onSelectBottom = { item ->
+                    when (item) {
+                        BottomItem.Home -> go(Route.Dashboard)
+                        BottomItem.Settings -> go(Route.Settings)
+                        BottomItem.Grid -> go(Route.Grid)
+                        BottomItem.Calendar -> go(Route.Calendar)
+                        BottomItem.Bell -> go(Route.Bell)
+                    }
+                },
+                onBack = { go(Route.Dashboard) }, // back button
+                onGoToSettings = { go(Route.Settings) },
+                onEditProfile = { go(Route.EditProfile) }
+            )
+        }
+
         composable(Route.DailyJournaling.path) {
             DailyJournalingScreen(
                 onSelectBottom = { item ->
@@ -170,6 +190,12 @@ fun AppNavHost(navController: NavHostController) {
             )
         }
 
+        composable(Route.EditProfile.path) {
+            EditProfileScreen(
+                onSave = { _, _, _ -> go(Route.Profile) },
+                onBack = { go(Route.Profile) }
+            )
+        }
 
     }
 }
