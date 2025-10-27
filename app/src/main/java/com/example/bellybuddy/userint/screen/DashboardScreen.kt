@@ -1,5 +1,6 @@
 package com.example.bellybuddy.userint.screen
 
+import android.app.Application
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -39,6 +40,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.bellybuddy.viewmodel.UserViewModel
+import com.example.bellybuddy.viewmodel.UserViewModelFactory
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,6 +55,22 @@ fun DashboardScreen(
     onLogout: (() -> Unit)? = null // optional for later use
 
 ) {
+    // --- START: ViewModel and Database Integration ---
+
+    // Get the application context to create the ViewModel
+    val application = LocalContext.current.applicationContext as Application
+
+    // Instantiate the ViewModel using our factory
+    val userViewModel: UserViewModel = viewModel(
+        factory = UserViewModelFactory(application)
+    )
+
+    // Observe the loggedInUser StateFlow. The UI will automatically recompose when this changes.
+    val loggedInUser by userViewModel.loggedInUser.collectAsState()
+
+    // --- END: ViewModel and Database Integration ---
+
+
     val calendar = Calendar.getInstance()
     val hour = calendar.get(Calendar.HOUR_OF_DAY)
     val greeting = when (hour) {
@@ -81,11 +103,12 @@ fun DashboardScreen(
                             .padding(end = 12.dp)
                             .size(50.dp)
                             .clickable { onProfileClick?.invoke() }
-                    ) { Image(
-                        painter = painterResource(id = R.drawable.profile_photo),
-                        contentDescription = "Profile",
-                        modifier = Modifier
-                            .fillMaxSize()
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.profile_photo),
+                            contentDescription = "Profile",
+                            modifier = Modifier
+                                .fillMaxSize()
                         )
                     }
                 }
@@ -110,14 +133,15 @@ fun DashboardScreen(
             ) {
                 Spacer(Modifier.height(3.dp))
                 Text(
-                    text = "$greeting, Robie",
+                    // Use the user's name from the database, with a fallback.
+                    text = "$greeting, ${loggedInUser?.name ?: "User"}",
                     style = MaterialTheme.typography.headlineMedium,
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
 
                 Row(Modifier.fillMaxWidth()) {
                     DailyScoreCard(
-                        score = 88,
+                        score = 88, // This can be replaced later if you store score in the DB
                         ringColor = brand,
                         modifier = Modifier
                             .weight(1f)
@@ -126,7 +150,9 @@ fun DashboardScreen(
                     )
                     WeightCard(
                         title = "Weight",
-                        value = "173.5 lbs",
+                        // Use the user's weight from the database.
+                        // The `?:` operator provides a default value if weight is null.
+                        value = "${loggedInUser?.weight ?: "--"} lbs",
                         modifier = Modifier
                             .weight(1f)
                             .height(150.dp)
@@ -442,6 +468,3 @@ private fun ToolbarIcon(
         )
     }
 }
-
-
-

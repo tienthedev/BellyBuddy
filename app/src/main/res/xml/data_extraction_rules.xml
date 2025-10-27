@@ -1,19 +1,12 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample data extraction rules file; uncomment and customize as necessary.
-   See https://developer.android.com/about/versions/12/backup-restore#xml-changes
-   for details.
--->
-<data-extraction-rules>
-    <cloud-backup>
-        <!-- TODO: Use <include> and <exclude> to control what is backed up.
-        <include .../>
-        <exclude .../>
-        -->
-    </cloud-backup>
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
     <!--
-    <device-transfer>
-        <include .../>
-        <exclude .../>
-    </device-transfer>
+      Exclude all files in the database directory from Auto Backup.
+      Databases should not be backed up directly to avoid data inconsistency
+      and corruption issues on restore. [1]
     -->
-</data-extraction-rules>
+    <exclude domain="database" path="." />
+
+    <!-- You can add other include/exclude rules here -->
+
+</full-backup-content>
