@@ -16,6 +16,8 @@ import coil.compose.rememberAsyncImagePainter
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.ui.layout.ContentScale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,9 +46,11 @@ fun EditProfileScreen(
             TopAppBar(
                 title = { Text("Edit Profile") },
                 navigationIcon = {
-                    TextButton(onClick = onBack) {
-                        Text("Back")
-                    }
+                    Icon(
+                        imageVector = Icons.Default.ArrowBack,
+                        contentDescription = "Back",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
                 }
             )
         }
@@ -81,7 +85,6 @@ fun EditProfileScreen(
                 }
             }
 
-            // 🖼 Change Photo Button
             Button(
                 onClick = {
                     // Launch Android Photo Picker

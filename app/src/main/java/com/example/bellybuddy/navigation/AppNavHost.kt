@@ -143,7 +143,8 @@ fun AppNavHost(navController: NavHostController) {
                         BottomItem.Calendar -> go(Route.Calendar)
                         BottomItem.Bell     -> go(Route.Bell)
                     }
-                }
+                },
+                onBack = { go(Route.Grid) }
             )
         }
 
@@ -157,7 +158,8 @@ fun AppNavHost(navController: NavHostController) {
                         BottomItem.Calendar -> go(Route.Calendar)
                         BottomItem.Bell     -> go(Route.Bell)
                     }
-                }
+                },
+                onBack = { go(Route.Grid) }
             )
         }
 
@@ -172,7 +174,7 @@ fun AppNavHost(navController: NavHostController) {
                         BottomItem.Bell     -> go(Route.Bell)
                     }
                 },
-                onBackClick = { go(Route.Grid) }
+                onBack = { go(Route.Grid) }
             )
         }
 
