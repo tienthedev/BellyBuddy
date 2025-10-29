@@ -3,6 +3,7 @@ package com.example.bellybuddy.data
 import android.content.Context
 import androidx.room.Room
 import com.example.bellybuddy.data.database.AppDatabase
+import com.example.bellybuddy.data.repository.FoodLogRepository
 
 object DatabaseProvider {
     @Volatile
@@ -18,5 +19,9 @@ object DatabaseProvider {
             INSTANCE = instance
             instance
         }
+    }
+    fun getFoodLogRepository(context: Context): FoodLogRepository {
+        val db = getDatabase(context)
+        return FoodLogRepository(db.foodLogDao())
     }
 }
