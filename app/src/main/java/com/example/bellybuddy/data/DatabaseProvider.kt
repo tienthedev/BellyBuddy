@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.room.Room
 import com.example.bellybuddy.data.database.AppDatabase
 import com.example.bellybuddy.data.repository.FoodLogRepository
+import com.example.bellybuddy.data.repository.SymptomRepository
+import com.example.bellybuddy.data.repository.BowelMovementRepository
 
 object DatabaseProvider {
     @Volatile
@@ -23,5 +25,18 @@ object DatabaseProvider {
     fun getFoodLogRepository(context: Context): FoodLogRepository {
         val db = getDatabase(context)
         return FoodLogRepository(db.foodLogDao())
+    }
+
+    fun getSymptomRepository(context: Context): SymptomRepository {
+        val db = getDatabase(context)
+        return SymptomRepository(db.symptomDao())
+    }
+
+    fun getBowelMovementRepository(context: Context): BowelMovementRepository {
+        val db = getDatabase(context)
+        return BowelMovementRepository(
+            db.bowelMovementDao(),
+            db.bowelSymptomLinkDao()
+        )
     }
 }
