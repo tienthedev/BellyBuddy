@@ -35,3 +35,5 @@ val Pink80 = WarmOrangeLight
 val Purple40 = SoftPurple
 val PurpleGrey40 = Color(0xFF625b71)
 val Pink40 = WarmOrangeDark
+val Black = Color(0xFF000000)
+val White = Color(0xFFFFFFFF)
