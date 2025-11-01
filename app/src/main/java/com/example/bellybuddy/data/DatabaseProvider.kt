@@ -1,24 +1,18 @@
 package com.example.bellybuddy.data
 
 import android.content.Context
-import androidx.room.Room
 import com.example.bellybuddy.data.database.AppDatabase
-import com.example.bellybuddy.data.repository.FoodLogRepository
-import com.example.bellybuddy.data.repository.SymptomRepository
-import com.example.bellybuddy.data.repository.BowelMovementRepository
+import com.example.bellybuddy.data.repository.*
 
 object DatabaseProvider {
+
     @Volatile
-    private var INSTANCE: AppDatabase? = null
+    private var database: AppDatabase? = null
 
     fun getDatabase(context: Context): AppDatabase {
-        return INSTANCE ?: synchronized(this) {
-            val instance = Room.databaseBuilder(
-                context.applicationContext,
-                AppDatabase::class.java,
-                "app_database"
-            ).build()
-            INSTANCE = instance
+        return database ?: synchronized(this) {
+            val instance = AppDatabase.getDatabase(context.applicationContext)
+            database = instance
             instance
         }
     }
@@ -38,5 +32,10 @@ object DatabaseProvider {
             db.bowelMovementDao(),
             db.bowelSymptomLinkDao()
         )
+    }
+
+    fun getDailyJournalRepository(context: Context): DailyJournalRepository {
+        val db = getDatabase(context)
+        return DailyJournalRepository(db.dailyJournalEntryDao())
     }
 }

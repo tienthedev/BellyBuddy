@@ -13,9 +13,10 @@ import com.example.bellybuddy.data.model.*
         FoodLog::class,
         Symptom::class,              // symptom_entry table
         BowelMovement::class,         // bowel_movement_entry table
-        BowelSymptomLink::class       // bowel_symptom_link junction table
+        BowelSymptomLink::class,       // bowel_symptom_link junction table
+        DailyJournal::class
     ],
-    version = 7,  // Increment version
+    version = 9,  // Increment version
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -25,6 +26,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun symptomDao(): SymptomDao
     abstract fun bowelMovementDao(): BowelMovementDao
     abstract fun bowelSymptomLinkDao(): BowelSymptomLinkDao
+    abstract fun dailyJournalEntryDao(): DailyJournalDao
 
     companion object {
         @Volatile
