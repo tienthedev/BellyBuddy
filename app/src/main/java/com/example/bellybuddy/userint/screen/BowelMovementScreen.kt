@@ -5,13 +5,8 @@ import android.app.TimePickerDialog
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,17 +16,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.bellybuddy.data.model.BowelMovement
 import com.example.bellybuddy.ui.theme.*
-import com.example.bellybuddy.viewmodel.BowelMovementViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
 // Data class for Bristol Stool Scale types
 data class BristolType(
     val number: Int,
-    val emoji: String,
+    val emoji: String, // Later will replace with custom icons, emojis are placeholders
     val description: String
 )
 
@@ -107,7 +99,9 @@ fun ColorCircleButton(
                 color = if (isSelected) BellyGreenDark else NeutralGray
             ),
             contentPadding = PaddingValues(0.dp)
-        ) { }
+        ) {
+            // Empty content - just showing the color
+        }
 
         Spacer(modifier = Modifier.height(4.dp))
 
@@ -124,56 +118,45 @@ fun ColorCircleButton(
 @Composable
 fun BowelMovementScreen(
     onBack: () -> Unit,
-    onSelectBottom: (BottomItem) -> Unit,
-    viewModel: BowelMovementViewModel = viewModel()  // 👈 Add ViewModel
+    onSelectBottom: (BottomItem) -> Unit
 ) {
     val context = LocalContext.current
     val calendar = Calendar.getInstance()
 
-    // Date/Time formats
-    val dateFormatDisplay = SimpleDateFormat("MM/dd/yyyy", Locale.getDefault())
-    val timeFormatDisplay = SimpleDateFormat("h:mm a", Locale.getDefault())
-    val dateFormatDB = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-    val timeFormatDB = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
-
     // Auto-fill with current date and time
-    var selectedDate by remember { mutableStateOf(dateFormatDisplay.format(calendar.time)) }
-    var selectedTime by remember { mutableStateOf(timeFormatDisplay.format(calendar.time)) }
-    var selectedDateDB by remember { mutableStateOf(dateFormatDB.format(calendar.time)) }
+    val dateFormat = SimpleDateFormat("MM/dd/yyyy", Locale.getDefault())
+    val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
 
-    // Get saved bowel movements for today
-    val savedBowelMovements by viewModel.getBowelMovementsByDate(selectedDateDB)
-        .collectAsState(initial = emptyList())
+    var selectedDate by remember { mutableStateOf(dateFormat.format(calendar.time)) }
+    var selectedTime by remember { mutableStateOf(timeFormat.format(calendar.time)) }
 
-    // Form state
+    // Frequency counter
     var frequency by remember { mutableStateOf(1) }
+
+    // Bristol Stool Scale selection
     var selectedBristolType by remember { mutableStateOf<Int?>(null) }
+
+    // Stool color selection
     var selectedColor by remember { mutableStateOf<StoolColor?>(null) }
-    var urgencyLevel by remember { mutableStateOf(0f) }
-    var painLevel by remember { mutableStateOf(0f) }
+
+    // Urgency/Pain level
+    var urgencyPainLevel by remember { mutableStateOf(0f) }
+
+    // Blood and Mucus presence
     var hasBlood by remember { mutableStateOf(false) }
     var hasMucus by remember { mutableStateOf(false) }
-    var selectedSymptoms by remember { mutableStateOf(setOf<String>()) }
-    var notes by remember { mutableStateOf("") }
 
-    // Bristol types
-    val bristolTypes = listOf(
-        BristolType(1, "🟤", "Hard Lumps"),
-        BristolType(2, "🌰", "Lumpy Sausage"),
-        BristolType(3, "🍠", "Cracked Sausage"),
-        BristolType(4, "🌭", "Smooth Sausage"),
-        BristolType(5, "🥔", "Soft Blobs"),
-        BristolType(6, "💧", "Mushy"),
-        BristolType(7, "💦", "Liquid")
-    )
+    // Associated Symptoms
+    var selectedSymptoms by remember { mutableStateOf(setOf<String>()) }
+
+    // Notes
+    var notes by remember { mutableStateOf("") }
 
     // Date picker dialog
     val datePickerDialog = DatePickerDialog(
         context,
         { _, year, month, day ->
-            calendar.set(year, month, day)
-            selectedDate = dateFormatDisplay.format(calendar.time)
-            selectedDateDB = dateFormatDB.format(calendar.time)
+            selectedDate = "${month + 1}/$day/$year"
         },
         calendar.get(Calendar.YEAR),
         calendar.get(Calendar.MONTH),
@@ -188,17 +171,21 @@ fun BowelMovementScreen(
                 set(Calendar.HOUR_OF_DAY, hour)
                 set(Calendar.MINUTE, minute)
             }
-            selectedTime = timeFormatDisplay.format(cal.time)
+            selectedTime = timeFormat.format(cal.time)
         },
         calendar.get(Calendar.HOUR_OF_DAY),
         calendar.get(Calendar.MINUTE),
-        false
+        false // 12-hour format
     )
-
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Log Bowel Movement", color = Color.Black) },
+                title = {
+                    Text(
+                        "Log Bowel Movement",
+                        color = Color.Black
+                    )
+                },
                 navigationIcon = {
                     TextButton(
                         onClick = onBack,
@@ -206,7 +193,11 @@ fun BowelMovementScreen(
                             contentColor = BellyGreenDark
                         )
                     ) {
-                        Text("Back", fontWeight = FontWeight.SemiBold, fontSize = 16.sp)
+                        Text(
+                            "Back",
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -227,456 +218,438 @@ fun BowelMovementScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp)
         ) {
-            // Input Form (Scrollable)
+            // === Date & Time Section ===
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Date & Time",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.Black
+                )
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Date Button
+                    OutlinedButton(
+                        onClick = { datePickerDialog.show() },
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = Color.White,
+                            contentColor = Color.Black
+                        ),
+                        border = BorderStroke(1.dp, NeutralGray)
+                    ) {
+                        Text(selectedDate, fontSize = 14.sp)
+                    }
+
+                    // Time Button
+                    OutlinedButton(
+                        onClick = { timePickerDialog.show() },
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = Color.White,
+                            contentColor = Color.Black
+                        ),
+                        border = BorderStroke(1.dp, NeutralGray)
+                    ) {
+                        Text(selectedTime, fontSize = 14.sp)
+                    }
+                }
+            }
+
+            HorizontalDivider(thickness = 1.dp, color = LightGray)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // === Frequency Counter ===
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Frequency",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.Black
+                )
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Minus Button
+                    OutlinedButton(
+                        onClick = { if (frequency > 1) frequency-- },
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = Color.White,
+                            contentColor = Color.Black
+                        ),
+                        border = BorderStroke(1.dp, NeutralGray),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Text("−", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    // Counter Display
+                    Text(
+                        text = frequency.toString(),
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+
+                    // Plus Button
+                    OutlinedButton(
+                        onClick = { frequency++ },
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = Color.White,
+                            contentColor = Color.Black
+                        ),
+                        border = BorderStroke(1.dp, NeutralGray),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Text("+", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+
+            HorizontalDivider(thickness = 1.dp, color = LightGray)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // === Bristol Stool Scale (Consistency) ===
             Column(
                 modifier = Modifier
-                    .weight(0.6f)
-                    .verticalScroll(rememberScrollState())
-                    .padding(16.dp)
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
             ) {
-                // Date & Time Section
+                Text(
+                    text = "Consistency (Bristol Stool Scale)",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.Black,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+
+                // Bristol types with emojis as placeholders
+                // Replace emojis with custom icons later
+                val bristolTypes = listOf(
+                    BristolType(1, "🟤", "Hard Lumps"),
+                    BristolType(2, "🌰", "Lumpy Sausage"),
+                    BristolType(3, "🍠", "Cracked Sausage"),
+                    BristolType(4, "🌭", "Smooth Sausage"),
+                    BristolType(5, "🥔", "Soft Blobs"),
+                    BristolType(6, "💧", "Mushy"),
+                    BristolType(7, "💦", "Liquid")
+                )
+
+                // Two rows: 4 in first row, 3 in second row
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    bristolTypes.take(4).forEach { type ->
+                        BristolTypeButton(
+                            type = type,
+                            isSelected = selectedBristolType == type.number,
+                            onClick = { selectedBristolType = type.number },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    bristolTypes.takeLast(3).forEach { type ->
+                        BristolTypeButton(
+                            type = type,
+                            isSelected = selectedBristolType == type.number,
+                            onClick = { selectedBristolType = type.number },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    // Empty spacer to align left
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+
+            HorizontalDivider(thickness = 1.dp, color = LightGray)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // === Color Picker ===
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
+            ) {
+                Text(
+                    text = "Color",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.Black,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+
+                // Single row of color circles
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    StoolColor.entries.forEach { stoolColor ->
+                        ColorCircleButton(
+                            stoolColor = stoolColor,
+                            isSelected = selectedColor == stoolColor,
+                            onClick = { selectedColor = stoolColor }
+                        )
+                    }
+                }
+            }
+
+            HorizontalDivider(thickness = 1.dp, color = LightGray)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // === Urgency/Pain Slider ===
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Date & Time",
+                        text = "Urgency / Pain",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = Color.Black
                     )
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        OutlinedButton(
-                            onClick = { datePickerDialog.show() },
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                containerColor = Color.White,
-                                contentColor = Color.Black
-                            ),
-                            border = BorderStroke(1.dp, NeutralGray)
-                        ) {
-                            Text(selectedDate, fontSize = 14.sp)
-                        }
-
-                        OutlinedButton(
-                            onClick = { timePickerDialog.show() },
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                containerColor = Color.White,
-                                contentColor = Color.Black
-                            ),
-                            border = BorderStroke(1.dp, NeutralGray)
-                        ) {
-                            Text(selectedTime, fontSize = 14.sp)
-                        }
-                    }
-                }
-
-                HorizontalDivider(thickness = 1.dp, color = LightGray)
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Bristol Stool Scale (Consistency)
-                Column(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
-                    Text(
-                        text = "Consistency (Bristol Stool Scale)",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.Black,
-                        modifier = Modifier.padding(bottom = 12.dp)
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        bristolTypes.take(4).forEach { type ->
-                            BristolTypeButton(
-                                type = type,
-                                isSelected = selectedBristolType == type.number,
-                                onClick = { selectedBristolType = type.number },
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        bristolTypes.takeLast(3).forEach { type ->
-                            BristolTypeButton(
-                                type = type,
-                                isSelected = selectedBristolType == type.number,
-                                onClick = { selectedBristolType = type.number },
-                                modifier = Modifier.weight(1f)
-                            )
-                        }
-                        Spacer(modifier = Modifier.weight(1f))
-                    }
-                }
-
-                HorizontalDivider(thickness = 1.dp, color = LightGray)
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Color Picker
-                Column(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
-                    Text(
-                        text = "Color",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.Black,
-                        modifier = Modifier.padding(bottom = 12.dp)
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly
-                    ) {
-                        StoolColor.entries.forEach { stoolColor ->
-                            ColorCircleButton(
-                                stoolColor = stoolColor,
-                                isSelected = selectedColor == stoolColor,
-                                onClick = { selectedColor = stoolColor }
-                            )
-                        }
-                    }
-                }
-
-                HorizontalDivider(thickness = 1.dp, color = LightGray)
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Pain Level Slider
-                Column(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Pain Level",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color.Black
-                        )
-
-                        Box(
-                            modifier = Modifier
-                                .background(Color.Black, shape = MaterialTheme.shapes.medium)
-                                .padding(horizontal = 12.dp, vertical = 6.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = painLevel.toInt().toString(),
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Slider(
-                        value = painLevel,
-                        onValueChange = { painLevel = it },
-                        valueRange = 0f..10f,
-                        steps = 9,
-                        colors = SliderDefaults.colors(
-                            thumbColor = BellyGreenDark,
-                            activeTrackColor = BellyGreenDark,
-                            inactiveTrackColor = LightGray
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-
-                // Urgency Level Slider
-                Column(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Urgency Level",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color.Black
-                        )
-
-                        Box(
-                            modifier = Modifier
-                                .background(Color.Black, shape = MaterialTheme.shapes.medium)
-                                .padding(horizontal = 12.dp, vertical = 6.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = urgencyLevel.toInt().toString(),
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Slider(
-                        value = urgencyLevel,
-                        onValueChange = { urgencyLevel = it },
-                        valueRange = 0f..10f,
-                        steps = 9,
-                        colors = SliderDefaults.colors(
-                            thumbColor = BellyGreenDark,
-                            activeTrackColor = BellyGreenDark,
-                            inactiveTrackColor = LightGray
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-
-                HorizontalDivider(thickness = 1.dp, color = LightGray)
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Blood / Mucus Checkboxes
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Checkbox(
-                            checked = hasBlood,
-                            onCheckedChange = { hasBlood = it },
-                            colors = CheckboxDefaults.colors(
-                                checkedColor = BellyGreenDark,
-                                uncheckedColor = NeutralGray
-                            )
-                        )
-                        Text(text = "Blood", fontSize = 16.sp, color = Color.Black)
-                    }
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Checkbox(
-                            checked = hasMucus,
-                            onCheckedChange = { hasMucus = it },
-                            colors = CheckboxDefaults.colors(
-                                checkedColor = BellyGreenDark,
-                                uncheckedColor = NeutralGray
-                            )
-                        )
-                        Text(text = "Mucus", fontSize = 16.sp, color = Color.Black)
-                    }
-                }
-
-                HorizontalDivider(thickness = 1.dp, color = LightGray)
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Notes Field
-                Column(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
-                    Text(
-                        text = "Notes (Optional)",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color.Black,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-
-                    OutlinedTextField(
-                        value = notes,
-                        onValueChange = { notes = it },
-                        modifier = Modifier.fillMaxWidth().height(100.dp),
-                        placeholder = { Text("Add any additional details...", color = NeutralGray) },
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = BellyGreenDark,
-                            unfocusedBorderColor = NeutralGray,
-                            cursorColor = BellyGreenDark
-                        ),
-                        maxLines = 4
-                    )
-                }
-
-                // Save Button
-                Button(
-                    onClick = {
-                        if (selectedBristolType != null && selectedColor != null) {
-                            val timeDB = try {
-                                val displayTime = timeFormatDisplay.parse(selectedTime)
-                                timeFormatDB.format(displayTime ?: Date())
-                            } catch (e: Exception) {
-                                timeFormatDB.format(Date())
-                            }
-
-                            val bowelMovement = BowelMovement(
-                                userId = 1,
-                                date = selectedDateDB,
-                                time = timeDB,
-                                consistency = "Type $selectedBristolType",
-                                color = selectedColor!!.displayName,
-                                painLevel = painLevel.toInt(),
-                                urgencyLevel = urgencyLevel.toInt(),
-                                blood = hasBlood,
-                                mucus = hasMucus,
-                                notes = notes
-                            )
-
-                            viewModel.insertBowelMovement(bowelMovement)
-
-                            // Reset form
-                            selectedBristolType = null
-                            selectedColor = null
-                            painLevel = 0f
-                            urgencyLevel = 0f
-                            hasBlood = false
-                            hasMucus = false
-                            notes = ""
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
-                    enabled = selectedBristolType != null && selectedColor != null,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = BellyGreenDark,
-                        contentColor = Color.White
-                    ),
-                    shape = MaterialTheme.shapes.medium
-                ) {
-                    Text(
-                        text = "Save Entry",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-
-            HorizontalDivider(thickness = 2.dp, color = LightGray)
-
-            // Saved Bowel Movements Section
-            Column(
-                modifier = Modifier
-                    .weight(0.4f)
-                    .fillMaxWidth()
-                    .padding(16.dp)
-            ) {
-                Text(
-                    "Today's Bowel Movements",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    modifier = Modifier.padding(bottom = 12.dp)
-                )
-
-                if (savedBowelMovements.isEmpty()) {
+                    // Value display in black circle
                     Box(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .background(Color.Black, shape = MaterialTheme.shapes.medium)
+                            .padding(horizontal = 12.dp, vertical = 6.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            "No bowel movements logged today",
-                            color = Color.Gray,
-                            style = MaterialTheme.typography.bodyMedium
+                            text = urgencyPainLevel.toInt().toString(),
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
                         )
                     }
-                } else {
-                    LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Slider(
+                    value = urgencyPainLevel,
+                    onValueChange = { urgencyPainLevel = it },
+                    valueRange = 0f..10f,
+                    steps = 9,
+                    colors = SliderDefaults.colors(
+                        thumbColor = BellyGreenDark,
+                        activeTrackColor = BellyGreenDark,
+                        inactiveTrackColor = LightGray
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            HorizontalDivider(thickness = 1.dp, color = LightGray)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // === Blood / Mucus Checkboxes ===
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Blood Checkbox
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Checkbox(
+                        checked = hasBlood,
+                        onCheckedChange = { hasBlood = it },
+                        colors = CheckboxDefaults.colors(
+                            checkedColor = BellyGreenDark,
+                            uncheckedColor = NeutralGray
+                        )
+                    )
+                    Text(
+                        text = "Blood",
+                        fontSize = 16.sp,
+                        color = Color.Black
+                    )
+                }
+
+                // Mucus Checkbox
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Checkbox(
+                        checked = hasMucus,
+                        onCheckedChange = { hasMucus = it },
+                        colors = CheckboxDefaults.colors(
+                            checkedColor = BellyGreenDark,
+                            uncheckedColor = NeutralGray
+                        )
+                    )
+                    Text(
+                        text = "Mucus",
+                        fontSize = 16.sp,
+                        color = Color.Black
+                    )
+                }
+            }
+
+            HorizontalDivider(thickness = 1.dp, color = LightGray)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // === Associated Symptoms ===
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
+            ) {
+                Text(
+                    text = "Associated Symptoms",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.Black,
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
+                // Could connect to backend for dynamic list later
+                // and with SymptomScreen
+                val symptoms = listOf(
+                    "Fatigue",
+                    "Nausea",
+                    "Cramping",
+                    "Bloating",
+                    "Loss of Appetite",
+                    "Headache"
+                )
+
+                // Display symptoms in a grid-like layout (2 columns)
+                symptoms.chunked(2).forEach { rowSymptoms ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        items(savedBowelMovements) { bm ->
-                            SavedBowelMovementCard(
-                                bowelMovement = bm,
-                                onDelete = { viewModel.deleteBowelMovement(bm) }
-                            )
+                        rowSymptoms.forEach { symptom ->
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Checkbox(
+                                    checked = selectedSymptoms.contains(symptom),
+                                    onCheckedChange = { isChecked ->
+                                        selectedSymptoms = if (isChecked) {
+                                            selectedSymptoms + symptom
+                                        } else {
+                                            selectedSymptoms - symptom
+                                        }
+                                    },
+                                    colors = CheckboxDefaults.colors(
+                                        checkedColor = BellyGreenDark,
+                                        uncheckedColor = NeutralGray
+                                    )
+                                )
+                                Text(
+                                    text = symptom,
+                                    fontSize = 14.sp,
+                                    color = Color.Black
+                                )
+                            }
+                        }
+                        // Add empty space if odd number of symptoms in row
+                        if (rowSymptoms.size == 1) {
+                            Spacer(modifier = Modifier.weight(1f))
                         }
                     }
                 }
             }
-        }
-    }
-}
 
-@Composable
-fun SavedBowelMovementCard(
-    bowelMovement: BowelMovement,
-    onDelete: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp),
-        border = BorderStroke(1.dp, LightGray)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Top
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
+            HorizontalDivider(thickness = 1.dp, color = LightGray)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // === Notes Field ===
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
+            ) {
                 Text(
-                    text = "${bowelMovement.consistency} - ${bowelMovement.color}",
-                    fontWeight = FontWeight.Bold,
+                    text = "Notes (Optional)",
                     fontSize = 16.sp,
-                    color = Color.Black
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.Black,
+                    modifier = Modifier.padding(bottom = 8.dp)
                 )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Time: ${formatTime(bowelMovement.time)}",
-                    fontSize = 14.sp,
-                    color = Color.Gray
+
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp),
+                    placeholder = { Text("Add any additional details...", color = NeutralGray) },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = BellyGreenDark,
+                        unfocusedBorderColor = NeutralGray,
+                        cursorColor = BellyGreenDark
+                    ),
+                    maxLines = 5
                 )
-                Text(
-                    text = "Pain: ${bowelMovement.painLevel}/10 | Urgency: ${bowelMovement.urgencyLevel}/10",
-                    fontSize = 14.sp,
-                    color = Color.Gray
-                )
-                if (bowelMovement.blood || bowelMovement.mucus) {
-                    Text(
-                        text = buildString {
-                            if (bowelMovement.blood) append("🔴 Blood ")
-                            if (bowelMovement.mucus) append("💧 Mucus")
-                        },
-                        fontSize = 14.sp,
-                        color = Color.Red
-                    )
-                }
-                if (bowelMovement.notes.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = bowelMovement.notes,
-                        fontSize = 12.sp,
-                        color = Color.Gray.copy(alpha = 0.7f)
-                    )
-                }
             }
 
-            IconButton(onClick = onDelete) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete",
-                    tint = Color.Red
+            HorizontalDivider(thickness = 1.dp, color = LightGray)
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // === Save Button ===
+            Button(
+                onClick = {
+                    // TODO: Save the bowel movement entry
+                    // This will save all the data: date, time, frequency, bristol type,
+                    // color, urgency/pain, blood, mucus, symptoms, notes
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = BellyGreenDark,
+                    contentColor = Color.White
+                ),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Text(
+                    text = "Save Entry",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
                 )
             }
+
+            Spacer(modifier = Modifier.height(16.dp))
         }
-    }
-}
-
-// Helper function to format time
-private fun formatTime(time: String): String {
-    return try {
-        val inputFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
-        val outputFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
-        val date = inputFormat.parse(time)
-        outputFormat.format(date ?: Date())
-    } catch (e: Exception) {
-        time
     }
 }

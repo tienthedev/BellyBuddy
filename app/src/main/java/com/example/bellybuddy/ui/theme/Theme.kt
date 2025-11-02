@@ -1,7 +1,6 @@
 package com.example.bellybuddy.ui.theme
 
 import android.app.Activity
-import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -11,38 +10,44 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = BellyGreenDark,
+    onPrimary = White,
+    secondary = HealthBlueDark,
+    onSecondary = White,
+    tertiary = WarmOrangeDark,
+    background = SurfaceDark,
+    surface = SurfaceDark,
+    onSurface = OnSurfaceDark,
+    error = ErrorRed,
+    onError = White
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
+    primary = BellyGreen,
+    onPrimary = White,
+    secondary = HealthBlue,
+    onSecondary = White,
+    tertiary = WarmOrange,
+    background = SurfaceLight,
+    surface = SurfaceLight,
+    onSurface = OnSurfaceLight,
+    error = ErrorRed,
+    onError = White
 )
 
 @Composable
 fun BellyBuddyTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is only available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalView.current.context
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
+    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
 
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.primary.toArgb()  // Use direct setStatusBarColor (not deprecated)
+            window.statusBarColor = colorScheme.primary.toArgb()
             val insetsController = WindowCompat.getInsetsController(window, view)
             insetsController.isAppearanceLightStatusBars = !darkTheme
         }

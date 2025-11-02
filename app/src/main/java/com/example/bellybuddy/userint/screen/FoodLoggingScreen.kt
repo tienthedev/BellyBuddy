@@ -8,17 +8,25 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.bellybuddy.data.model.FoodLog
-import com.example.bellybuddy.viewmodel.FoodLogViewModel
 import java.text.SimpleDateFormat
 import java.util.*
+
+// Temporary data class for Sprint 2 prototype
+data class FoodEntry(
+    val id: String = UUID.randomUUID().toString(),
+    val foodName: String,
+    val mealType: MealType,
+    val portionSize: String,
+    val description: String,
+    val timestamp: Long = System.currentTimeMillis()
+)
 
 enum class MealType(val displayName: String) {
     BREAKFAST("Breakfast"),
@@ -30,20 +38,13 @@ enum class MealType(val displayName: String) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FoodLoggingScreen(
-    onSelectBottom: (BottomItem) -> Unit,
-    viewModel: FoodLogViewModel = viewModel()
+    onSelectBottom: (BottomItem) -> Unit
 ) {
+    // For Sprint 2: In-memory list to demonstrate UI flow
+    var foodEntries by remember { mutableStateOf(getSampleEntries()) }
     var showAddSheet by remember { mutableStateOf(false) }
-    var editingEntry by remember { mutableStateOf<FoodLog?>(null) }
+    var editingEntry by remember { mutableStateOf<FoodEntry?>(null) }
     var selectedDate by remember { mutableStateOf(Calendar.getInstance()) }
-
-    // Format date for database query (yyyy-MM-dd)
-    val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-    val selectedDateString = dateFormat.format(selectedDate.time)
-
-    // Collect food logs from database for selected date
-    val foodLogs by viewModel.getFoodLogsByDate(selectedDateString)
-        .collectAsState(initial = emptyList())
 
     val brand = Color(0xFF9DDB9E)
 
@@ -89,6 +90,7 @@ fun FoodLoggingScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
+            // Date selector
             DateSelector(
                 selectedDate = selectedDate,
                 onDateChange = { selectedDate = it },
@@ -103,7 +105,8 @@ fun FoodLoggingScreen(
                 color = DividerDefaults.color
             )
 
-            if (foodLogs.isEmpty()) {
+            // Food entries list
+            if (foodEntries.isEmpty()) {
                 EmptyStateMessage(
                     modifier = Modifier
                         .fillMaxSize()
@@ -115,9 +118,8 @@ fun FoodLoggingScreen(
                     contentPadding = PaddingValues(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    val groupedEntries = foodLogs.groupBy {
-                        MealType.valueOf(it.mealType)
-                    }
+                    // Group by meal type
+                    val groupedEntries = foodEntries.groupBy { it.mealType }
 
                     MealType.entries.forEach { mealType ->
                         val entriesForMeal = groupedEntries[mealType] ?: emptyList()
@@ -136,7 +138,7 @@ fun FoodLoggingScreen(
                                 FoodEntryCard(
                                     entry = entry,
                                     onEdit = { editingEntry = entry },
-                                    onDelete = { viewModel.deleteFoodLog(entry) }
+                                    onDelete = { foodEntries = foodEntries - entry }
                                 )
                             }
                         }
@@ -149,23 +151,8 @@ fun FoodLoggingScreen(
         if (showAddSheet) {
             AddFoodEntrySheet(
                 onDismiss = { showAddSheet = false },
-                onSave = { foodName, mealType, portionSize, notes ->
-                    // Format current time for database
-                    val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
-                    val currentTime = timeFormat.format(Date())
-
-                    val newEntry = FoodLog(
-                        userId = 1,  // TODO: Get from actual logged-in user
-                        date = selectedDateString,
-                        time = currentTime,
-                        foodName = foodName,
-                        mealType = mealType.name,
-                        portionSize = portionSize,
-                        notes = notes,
-                        timeCreated = System.currentTimeMillis(),
-                        timeUpdated = System.currentTimeMillis()
-                    )
-                    viewModel.insertFoodLog(newEntry)
+                onSave = { newEntry ->
+                    foodEntries = foodEntries + newEntry
                     showAddSheet = false
                 }
             )
@@ -176,15 +163,10 @@ fun FoodLoggingScreen(
             AddFoodEntrySheet(
                 existingEntry = entry,
                 onDismiss = { editingEntry = null },
-                onSave = { foodName, mealType, portionSize, notes ->
-                    val updatedEntry = entry.copy(
-                        foodName = foodName,
-                        mealType = mealType.name,
-                        portionSize = portionSize,
-                        notes = notes,
-                        timeUpdated = System.currentTimeMillis()
-                    )
-                    viewModel.updateFoodLog(updatedEntry)
+                onSave = { updatedEntry ->
+                    foodEntries = foodEntries.map {
+                        if (it.id == updatedEntry.id) updatedEntry else it
+                    }
                     editingEntry = null
                 }
             )
@@ -219,6 +201,7 @@ private fun DateSelector(
             )
         }
 
+        // For Sprint 2: Navigate to previous/next day
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             TextButton(onClick = {
                 val newDate = selectedDate.clone() as Calendar
@@ -240,11 +223,13 @@ private fun DateSelector(
 
 @Composable
 private fun FoodEntryCard(
-    entry: FoodLog,
+    entry: FoodEntry,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val timeFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
+
     Surface(
         shape = RoundedCornerShape(16.dp),
         tonalElevation = 2.dp,
@@ -275,23 +260,23 @@ private fun FoodEntryCard(
                     )
                 }
 
-                // Display time from database
                 Text(
-                    text = formatTime(entry.time),
+                    text = timeFormat.format(Date(entry.timestamp)),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                 )
             }
 
-            if (entry.notes.isNotEmpty()) {
+            if (entry.description.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = entry.notes,
+                    text = entry.description,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f)
                 )
             }
 
+            // Action buttons
             Spacer(modifier = Modifier.height(8.dp))
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -309,18 +294,6 @@ private fun FoodEntryCard(
                 }
             }
         }
-    }
-}
-
-// Helper function to format time from "HH:mm:ss" to "h:mm a"
-private fun formatTime(time: String): String {
-    return try {
-        val inputFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
-        val outputFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
-        val date = inputFormat.parse(time)
-        outputFormat.format(date ?: Date())
-    } catch (e: Exception) {
-        time
     }
 }
 
@@ -345,4 +318,24 @@ private fun EmptyStateMessage(modifier: Modifier = Modifier) {
             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
         )
     }
+}
+
+// Sample data for Sprint 2 demonstration
+private fun getSampleEntries(): List<FoodEntry> {
+    return listOf(
+        FoodEntry(
+            foodName = "Oatmeal with Berries",
+            mealType = MealType.BREAKFAST,
+            portionSize = "1 bowl",
+            description = "Made with almond milk, topped with blueberries and strawberries. No added sugar.",
+            timestamp = System.currentTimeMillis() - 3600000 * 5
+        ),
+        FoodEntry(
+            foodName = "Grilled Chicken Salad",
+            mealType = MealType.LUNCH,
+            portionSize = "1 plate",
+            description = "Mixed greens, grilled chicken breast, olive oil dressing. From local cafe.",
+            timestamp = System.currentTimeMillis() - 3600000 * 2
+        )
+    )
 }
