@@ -7,7 +7,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
@@ -16,7 +15,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.bellybuddy.ui.theme.BellyGreenDark
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -40,8 +38,7 @@ enum class MealType(val displayName: String) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FoodLoggingScreen(
-    onSelectBottom: (BottomItem) -> Unit,
-    onBack: () -> Unit = {}
+    onSelectBottom: (BottomItem) -> Unit
 ) {
     // For Sprint 2: In-memory list to demonstrate UI flow
     var foodEntries by remember { mutableStateOf(getSampleEntries()) }
@@ -61,20 +58,6 @@ fun FoodLoggingScreen(
                             fontWeight = FontWeight.Bold
                         )
                     )
-                },
-                navigationIcon = {
-                    TextButton(
-                        onClick = onBack,
-                        colors = ButtonDefaults.textButtonColors(
-                            contentColor = BellyGreenDark // You can use Color.Black if you prefer
-                        )
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surface

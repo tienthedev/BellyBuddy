@@ -45,6 +45,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.bellybuddy.viewmodel.UserViewModel
 import com.example.bellybuddy.viewmodel.UserViewModelFactory
+import com.example.bellybuddy.viewmodel.DailyJournalViewModel
+import com.example.bellybuddy.data.model.DailyJournal
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -52,24 +57,21 @@ import com.example.bellybuddy.viewmodel.UserViewModelFactory
 fun DashboardScreen(
     onProfileClick: (() -> Unit)? = null,
     onBottomSelect: (BottomItem) -> Unit,
-    onLogout: (() -> Unit)? = null // optional for later use
-
+    onLogout: (() -> Unit)? = null
 ) {
-    // --- START: ViewModel and Database Integration ---
-
-    // Get the application context to create the ViewModel
+    // Get the application context to create the ViewModels
     val application = LocalContext.current.applicationContext as Application
 
-    // Instantiate the ViewModel using our factory
+    // Instantiate the UserViewModel using our factory
     val userViewModel: UserViewModel = viewModel(
         factory = UserViewModelFactory(application)
     )
 
-    // Observe the loggedInUser StateFlow. The UI will automatically recompose when this changes.
+    // Instantiate the DailyJournalEntryViewModel
+    val journalViewModel: DailyJournalViewModel = viewModel()
+
+    // Observe the loggedInUser StateFlow
     val loggedInUser by userViewModel.loggedInUser.collectAsState()
-
-    // --- END: ViewModel and Database Integration ---
-
 
     val calendar = Calendar.getInstance()
     val hour = calendar.get(Calendar.HOUR_OF_DAY)
@@ -79,7 +81,7 @@ fun DashboardScreen(
         else -> "Good Evening"
     }
 
-    val brand = Color(0xFF9DDB9E) // light green accent
+    val brand = Color(0xFF9DDB9E)
     val journalOpen = rememberSaveable { mutableStateOf(false) }
 
     Scaffold(
@@ -107,8 +109,7 @@ fun DashboardScreen(
                         Image(
                             painter = painterResource(id = R.drawable.profile_photo),
                             contentDescription = "Profile",
-                            modifier = Modifier
-                                .fillMaxSize()
+                            modifier = Modifier.fillMaxSize()
                         )
                     }
                 }
@@ -133,7 +134,6 @@ fun DashboardScreen(
             ) {
                 Spacer(Modifier.height(3.dp))
                 Text(
-                    // Use the user's name from the database, with a fallback.
                     text = "$greeting, ${loggedInUser?.name ?: "User"}",
                     style = MaterialTheme.typography.headlineMedium,
                     modifier = Modifier.padding(vertical = 8.dp)
@@ -141,7 +141,7 @@ fun DashboardScreen(
 
                 Row(Modifier.fillMaxWidth()) {
                     DailyScoreCard(
-                        score = 88, // This can be replaced later if you store score in the DB
+                        score = 88,
                         ringColor = brand,
                         modifier = Modifier
                             .weight(1f)
@@ -150,8 +150,6 @@ fun DashboardScreen(
                     )
                     WeightCard(
                         title = "Weight",
-                        // Use the user's weight from the database.
-                        // The `?:` operator provides a default value if weight is null.
                         value = "${loggedInUser?.weight ?: "--"} lbs",
                         modifier = Modifier
                             .weight(1f)
@@ -171,7 +169,7 @@ fun DashboardScreen(
                 )
             }
 
-            // Floating side button (must be inside the Box)
+            // Floating side button
             SideDockButton(
                 onClick = { journalOpen.value = true },
                 modifier = Modifier
@@ -179,11 +177,25 @@ fun DashboardScreen(
                     .offset(x = 8.dp)
             )
 
-            // Sliding sheet (also inside the Box for .align)
+            // Sliding sheet
             DailyJournalSheet(
                 open = journalOpen.value,
                 onClose = { journalOpen.value = false },
-                onSave = { text -> journalOpen.value = false },
+                onSave = { text ->
+                    // Save to database
+                    val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                    val today = dateFormat.format(Date())
+
+                    val entry = DailyJournal(
+                        userId = 1,  // TODO: Get from actual logged-in user
+                        date = today,
+                        mood = "",
+                        notes = text
+                    )
+
+                    journalViewModel.insertJournalEntry(entry)
+                    journalOpen.value = false
+                },
                 modifier = Modifier.align(Alignment.CenterEnd)
             )
         }
@@ -278,7 +290,7 @@ private fun SideDockButton(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        color = Color(0xFF9DDB9E), // your brand green
+        color = Color(0xFF9DDB9E),
         shape = RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp),
         shadowElevation = 6.dp,
         modifier = modifier
@@ -315,14 +327,14 @@ private fun DailyJournalSheet(
             Modifier
                 .fillMaxSize()
                 .background(Color.Black.copy(alpha = 0.35f))
-                .clickable { onClose() } // tap outside to close
+                .clickable { onClose() }
         )
     }
 
     AnimatedVisibility(
         visible = open,
         enter = slideInHorizontally(initialOffsetX = { it }) + fadeIn(),
-        exit  = slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
+        exit = slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
     ) {
         Surface(
             shape = RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp),
@@ -330,7 +342,7 @@ private fun DailyJournalSheet(
             shadowElevation = 8.dp,
             modifier = modifier
                 .fillMaxHeight()
-                .fillMaxWidth(1f) // sheet width (85% of screen); tweak as you like
+                .fillMaxWidth(1f)
         ) {
             var text by remember { mutableStateOf("") }
 
@@ -362,38 +374,51 @@ private fun DailyJournalSheet(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Button(
-                        onClick = onClose,
+                    OutlinedButton(
+                        onClick = {
+                            text = ""
+                            onClose()
+                        },
                         modifier = Modifier.weight(1f)
-                    ) { Text("Cancel") }
+                    ) {
+                        Text("Cancel")
+                    }
 
                     Button(
-                        onClick = { onSave(text) },
-                        modifier = Modifier.weight(1f)
-                    ) { Text("Save") }
+                        onClick = {
+                            if (text.isNotBlank()) {
+                                onSave(text)
+                                text = ""
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                        enabled = text.isNotBlank()
+                    ) {
+                        Text("Save")
+                    }
                 }
             }
         }
     }
 }
 
-enum class BottomItem { Settings, Grid, Home, Calendar, Bell}
+enum class BottomItem { Settings, Grid, Home, Calendar, Bell }
+
 @Composable
 fun BottomToolBar(
     selected: BottomItem,
     onSelect: (BottomItem) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // This Surface floats above the nav bar area and has big rounded corners
     Surface(
-        color = Color(0xFF121212),            // black-ish
+        color = Color(0xFF121212),
         tonalElevation = 8.dp,
         shadowElevation = 12.dp,
         shape = RoundedCornerShape(28.dp),
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 12.dp)
-            .navigationBarsPadding()         // keep above gesture bar
+            .navigationBarsPadding()
     ) {
         Row(
             modifier = Modifier
@@ -405,37 +430,36 @@ fun BottomToolBar(
                 item = BottomItem.Settings,
                 selected = selected == BottomItem.Settings,
                 onClick = { onSelect(BottomItem.Settings) },
-                painter = painterResource(R.drawable.settings) // your vector
+                painter = painterResource(R.drawable.settings)
             )
             ToolbarIcon(
                 item = BottomItem.Grid,
                 selected = selected == BottomItem.Grid,
                 onClick = { onSelect(BottomItem.Grid) },
-                painter = painterResource(R.drawable.grid) // your vector
+                painter = painterResource(R.drawable.grid)
             )
             ToolbarIcon(
                 item = BottomItem.Home,
                 selected = selected == BottomItem.Home,
                 onClick = { onSelect(BottomItem.Home) },
-                painter = painterResource(R.drawable.home) // your vector
+                painter = painterResource(R.drawable.home)
             )
             ToolbarIcon(
                 item = BottomItem.Calendar,
                 selected = selected == BottomItem.Calendar,
                 onClick = { onSelect(BottomItem.Calendar) },
-                painter = painterResource(R.drawable.calendar) // your vector
+                painter = painterResource(R.drawable.calendar)
             )
             ToolbarIcon(
                 item = BottomItem.Bell,
                 selected = selected == BottomItem.Bell,
                 onClick = { onSelect(BottomItem.Bell) },
-                painter = painterResource(R.drawable.bell) // your vector
+                painter = painterResource(R.drawable.bell)
             )
         }
     }
 }
 
-// --- Single icon with selected highlight + optional red dot for Bell ---
 @Composable
 private fun ToolbarIcon(
     item: BottomItem,
@@ -443,7 +467,7 @@ private fun ToolbarIcon(
     onClick: () -> Unit,
     painter: Painter,
 ) {
-    val highlight = Color(0xFF9DDB9E) // your brand green
+    val highlight = Color(0xFF9DDB9E)
 
     Box(
         contentAlignment = Alignment.Center,
@@ -451,7 +475,6 @@ private fun ToolbarIcon(
             .size(44.dp)
             .clickable(onClick = onClick)
     ) {
-        // Selected: green circular background
         if (selected) {
             Surface(
                 color = highlight,

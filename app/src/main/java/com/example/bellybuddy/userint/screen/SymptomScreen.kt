@@ -6,8 +6,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
@@ -19,6 +17,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.bellybuddy.ui.theme.*
+
+
+
+
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -26,7 +28,7 @@ import java.util.*
 fun SymptomScreen(
     onSelectBottom: (BottomItem) -> Unit,
     onAddSymptomClick: () -> Unit = {},
-    onBack: () -> Unit = {}
+    onBackClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val calendar = Calendar.getInstance()
@@ -62,15 +64,15 @@ fun SymptomScreen(
                 },
                 navigationIcon = {
                     TextButton(
-                        onClick = onBack,
+                        onClick = onBackClick,
                         colors = ButtonDefaults.textButtonColors(
                             contentColor = BellyGreenDark // You can use Color.Black if you prefer
                         )
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.onSurface
+                        Text(
+                            "Back",
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 16.sp
                         )
                     }
                 },
