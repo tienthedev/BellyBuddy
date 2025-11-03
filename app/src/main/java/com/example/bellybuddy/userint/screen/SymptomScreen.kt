@@ -8,8 +8,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -18,7 +19,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.bellybuddy.data.model.Symptom
 import com.example.bellybuddy.ui.theme.*
+import com.example.bellybuddy.viewmodel.SymptomViewModel
+import java.text.SimpleDateFormat
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -26,45 +31,51 @@ import java.util.*
 fun SymptomScreen(
     onSelectBottom: (BottomItem) -> Unit,
     onAddSymptomClick: () -> Unit = {},
-    onBack: () -> Unit = {}
+    onBack: () -> Unit = {},
+    viewModel: SymptomViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val calendar = Calendar.getInstance()
+    val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
 
-    // === Date state ===
-    var selectedDate by remember { mutableStateOf("Select a date") }
+    // Date state
+    var selectedDateString by remember { mutableStateOf(dateFormat.format(calendar.time)) }
+    var displayDate by remember { mutableStateOf("Today") }
+
+    // Get symptoms for selected date from database
+    val savedSymptoms by viewModel.getSymptomsByDate(selectedDateString)
+        .collectAsState(initial = emptyList())
 
     // Date picker dialog
     val datePickerDialog = DatePickerDialog(
         context,
         { _, year, month, day ->
-            selectedDate = "${month + 1}/$day/$year"
+            calendar.set(year, month, day)
+            selectedDateString = dateFormat.format(calendar.time)
+            displayDate = "${month + 1}/$day/$year"
         },
         calendar.get(Calendar.YEAR),
         calendar.get(Calendar.MONTH),
         calendar.get(Calendar.DAY_OF_MONTH)
     )
 
-    // === Symptom list + slider levels ===
-    var symptoms by remember {
-        mutableStateOf(listOf("Bloating", "Diarrhea", "Constipation", "Abdominal Pain", "Irregular Stool", "Loss of Appetite", "Incomplete Evacuation"))
-    }
+    // Symptom options and slider levels
+    val symptomOptions = listOf(
+        "Bloating", "Diarrhea", "Constipation", "Abdominal Pain",
+        "Irregular Stool", "Loss of Appetite", "Incomplete Evacuation"
+    )
     val symptomLevels = remember { mutableStateMapOf<String, Float>() }
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        "Symptom Tracking",
-                        color = Color.Black
-                    )
-                },
+                title = { Text("Symptom Tracking", color = Color.Black) },
                 navigationIcon = {
                     TextButton(
                         onClick = onBack,
                         colors = ButtonDefaults.textButtonColors(
-                            contentColor = BellyGreenDark // You can use Color.Black if you prefer
+                            contentColor = BellyGreenDark
                         )
                     ) {
                         Icon(
@@ -80,21 +91,11 @@ fun SymptomScreen(
                 )
             )
         },
-
         bottomBar = {
             BottomToolBar(
                 selected = BottomItem.Grid,
                 onSelect = onSelectBottom
             )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onAddSymptomClick,
-                containerColor = BellyGreen,
-                contentColor = Color.Black
-            ) {
-                Text("+", fontSize = 22.sp, fontWeight = FontWeight.Bold)
-            }
         },
         containerColor = Color.White
     ) { padding ->
@@ -105,7 +106,7 @@ fun SymptomScreen(
                 .padding(padding)
                 .padding(16.dp)
         ) {
-            // === Centered Date Button ===
+            // Date Button
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -119,22 +120,28 @@ fun SymptomScreen(
                         contentColor = Color.Black
                     ),
                     border = BorderStroke(1.dp, NeutralGray)
-
                 ) {
-                    Text(selectedDate)
+                    Text(displayDate)
                 }
             }
 
             HorizontalDivider(thickness = 1.dp, color = LightGray)
             Spacer(modifier = Modifier.height(16.dp))
 
-            // === Symptom List ===
+            // Symptom Input Section
+            Text(
+                "Log New Symptoms",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
             LazyColumn(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(bottom = 24.dp)
+                modifier = Modifier
+                    .weight(0.5f)
+                    .fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(symptoms) { symptom ->
+                items(symptomOptions) { symptom ->
                     SymptomSliderCard(
                         symptom = symptom,
                         level = symptomLevels[symptom] ?: 0f,
@@ -147,15 +154,74 @@ fun SymptomScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            // Save Button
             Button(
-                onClick = { /* no backend yet */ },
+                onClick = {
+                    val currentTime = timeFormat.format(Date())
+                    val symptomsToSave = symptomLevels
+                        .filter { it.value > 0 }
+                        .map { (name, level) ->
+                            Symptom(
+                                userId = 1,
+                                date = selectedDateString,
+                                time = currentTime,
+                                symptomType = name,
+                                intensity = level.toInt()
+                            )
+                        }
+
+                    if (symptomsToSave.isNotEmpty()) {
+                        viewModel.insertMultipleSymptoms(symptomsToSave) { }
+                        symptomLevels.clear()
+                    }
+                },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = BellyGreenDark,
-                    contentColor = Color.Black
+                    contentColor = Color.White
                 )
             ) {
                 Text("Save Symptoms", fontWeight = FontWeight.Bold)
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+            HorizontalDivider(thickness = 1.dp, color = LightGray)
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Saved Symptoms Section
+            Text(
+                "Saved Symptoms for $displayDate",
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            if (savedSymptoms.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .weight(0.5f)
+                        .fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        "No symptoms logged for this date",
+                        color = Color.Gray,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .weight(0.5f)
+                        .fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(savedSymptoms) { symptom ->
+                        SavedSymptomCard(
+                            symptom = symptom,
+                            onDelete = { viewModel.deleteSymptom(symptom) }
+                        )
+                    }
+                }
             }
         }
     }
@@ -181,13 +247,12 @@ fun SymptomSliderCard(
             Text(
                 text = symptom,
                 fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
+                fontSize = 16.sp,
                 color = Color.Black
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // === Slider with value label ===
             Slider(
                 value = level,
                 onValueChange = onLevelChange,
@@ -201,11 +266,10 @@ fun SymptomSliderCard(
                 modifier = Modifier.fillMaxWidth(0.9f)
             )
 
-            // === Rounded black circle showing current value ===
             Box(
                 modifier = Modifier
                     .padding(top = 4.dp)
-                    .background(Color.Black, shape = MaterialTheme.shapes.medium)
+                    .background(Color.Black, shape = RoundedCornerShape(12.dp))
                     .padding(horizontal = 10.dp, vertical = 4.dp),
                 contentAlignment = Alignment.Center
             ) {
@@ -220,3 +284,46 @@ fun SymptomSliderCard(
     }
 }
 
+@Composable
+fun SavedSymptomCard(
+    symptom: Symptom,
+    onDelete: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(2.dp),
+        border = BorderStroke(1.dp, LightGray)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = symptom.symptomType,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp,
+                    color = Color.Black
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Intensity: ${symptom.intensity}/10",
+                    fontSize = 14.sp,
+                    color = Color.Gray
+                )
+            }
+
+            IconButton(onClick = onDelete) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Delete symptom",
+                    tint = Color.Red
+                )
+            }
+        }
+    }
+}

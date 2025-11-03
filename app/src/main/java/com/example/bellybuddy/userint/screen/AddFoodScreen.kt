@@ -19,20 +19,25 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.bellybuddy.data.model.FoodLog
 import java.text.SimpleDateFormat
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddFoodEntrySheet(
-    existingEntry: FoodEntry? = null,
+    existingEntry: FoodLog? = null,
     onDismiss: () -> Unit,
-    onSave: (FoodEntry) -> Unit
+    onSave: (String, MealType, String, String) -> Unit  // foodName, mealType, portionSize, notes
 ) {
     var foodName by remember { mutableStateOf(existingEntry?.foodName ?: "") }
-    var selectedMealType by remember { mutableStateOf(existingEntry?.mealType ?: MealType.BREAKFAST) }
+    var selectedMealType by remember {
+        mutableStateOf(
+            existingEntry?.let { MealType.valueOf(it.mealType) } ?: MealType.BREAKFAST
+        )
+    }
     var portionSize by remember { mutableStateOf(existingEntry?.portionSize ?: "") }
-    var description by remember { mutableStateOf(existingEntry?.description ?: "") }
+    var notes by remember { mutableStateOf(existingEntry?.notes ?: "") }
     var expanded by remember { mutableStateOf(false) }
 
     val brand = Color(0xFF9DDB9E)
@@ -68,7 +73,7 @@ fun AddFoodEntrySheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .fillMaxHeight(0.85f)
-                    .clickable(enabled = false) {} // Prevent click-through
+                    .clickable(enabled = false) {}
             ) {
                 Column(
                     modifier = Modifier
@@ -154,13 +159,13 @@ fun AddFoodEntrySheet(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Description/Notes
+                    // Notes
                     OutlinedTextField(
-                        value = description,
-                        onValueChange = { description = it },
+                        value = notes,
+                        onValueChange = { notes = it },
                         label = { Text("Notes (Optional)") },
                         placeholder = {
-                            Text("How was it prepared? Seasonings? Where from?")
+                            Text("Ingredients, cooking method, restaurant name, etc.")
                         },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -174,7 +179,7 @@ fun AddFoodEntrySheet(
 
                     // Helper text
                     Text(
-                        text = "Add details like cooking method, seasonings, restaurant name, or any other relevant info",
+                        text = "Add details like ingredients, cooking method, seasonings, restaurant name, or any other relevant info",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                         modifier = Modifier.padding(start = 16.dp)
@@ -201,8 +206,7 @@ fun AddFoodEntrySheet(
                                 )
                                 Text(
                                     text = if (existingEntry != null) {
-                                        SimpleDateFormat("h:mm a", Locale.getDefault())
-                                            .format(Date(existingEntry.timestamp))
+                                        formatTimeDisplay(existingEntry.time)
                                     } else "Now",
                                     style = MaterialTheme.typography.bodyLarge.copy(
                                         fontWeight = FontWeight.SemiBold
@@ -237,20 +241,12 @@ fun AddFoodEntrySheet(
                         Button(
                             onClick = {
                                 if (foodName.isNotBlank() && portionSize.isNotBlank()) {
-                                    val entry = existingEntry?.copy(
-                                        foodName = foodName.trim(),
-                                        mealType = selectedMealType,
-                                        portionSize = portionSize.trim(),
-                                        description = description.trim()
+                                    onSave(
+                                        foodName.trim(),
+                                        selectedMealType,
+                                        portionSize.trim(),
+                                        notes.trim()
                                     )
-                                        ?: FoodEntry(
-                                            foodName = foodName.trim(),
-                                            mealType = selectedMealType,
-                                            portionSize = portionSize.trim(),
-                                            description = description.trim(),
-                                            timestamp = System.currentTimeMillis()
-                                        )
-                                    onSave(entry)
                                 }
                             },
                             enabled = foodName.isNotBlank() && portionSize.isNotBlank(),
@@ -274,5 +270,17 @@ fun AddFoodEntrySheet(
                 }
             }
         }
+    }
+}
+
+// Helper function to format time for display
+private fun formatTimeDisplay(time: String): String {
+    return try {
+        val inputFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+        val outputFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
+        val date = inputFormat.parse(time)
+        outputFormat.format(date ?: Date())
+    } catch (e: Exception) {
+        time
     }
 }
