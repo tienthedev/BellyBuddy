@@ -49,10 +49,15 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.text.style.TextAlign
+import com.example.bellybuddy.data.model.DailyJournal
 import com.example.bellybuddy.ui.theme.BellyGreen
 import com.example.bellybuddy.ui.theme.BellyGreenDark
+import com.example.bellybuddy.viewmodel.DailyJournalViewModel
 import com.example.bellybuddy.viewmodel.UserViewModel
 import com.example.bellybuddy.viewmodel.UserViewModelFactory
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -72,6 +77,8 @@ fun DashboardScreen(
     val userViewModel: UserViewModel = viewModel(
         factory = UserViewModelFactory(application)
     )
+
+    val journalViewModel: DailyJournalViewModel = viewModel()
 
     // Observe the loggedInUser StateFlow. The UI will automatically recompose when this changes.
     val loggedInUser by userViewModel.loggedInUser.collectAsState()
@@ -202,7 +209,20 @@ fun DashboardScreen(
             DailyJournalSheet(
                 open = journalOpen.value,
                 onClose = { journalOpen.value = false },
-                onSave = { text -> journalOpen.value = false },
+                onSave = { text ->
+                    // Save to database
+                    val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+                    val today = dateFormat.format(Date())
+
+                    val entry = DailyJournal(
+                        userId = 1,  // TODO: Get from actual logged-in user
+                        date = today,
+                        mood = "",
+                        notes = text
+                    )
+                    journalViewModel.insertJournalEntry(entry)
+                    journalOpen.value = false
+                },
                 modifier = Modifier.align(Alignment.CenterEnd)
             )
         }
