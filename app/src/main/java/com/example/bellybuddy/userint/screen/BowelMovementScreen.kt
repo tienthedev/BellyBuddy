@@ -185,7 +185,8 @@ fun BowelMovementScreen(
                 title = {
                     Text(
                         "Log Bowel Movement",
-                        color = Color.Black
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold
                     )
                 },
                 navigationIcon = {

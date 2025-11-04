@@ -48,25 +48,23 @@ fun FoodLoggingScreen(
     var showAddSheet by remember { mutableStateOf(false) }
     var editingEntry by remember { mutableStateOf<FoodEntry?>(null) }
     var selectedDate by remember { mutableStateOf(Calendar.getInstance()) }
-
     val brand = Color(0xFF9DDB9E)
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            CenterAlignedTopAppBar(
                 title = {
                     Text(
                         "Food Log",
-                        style = MaterialTheme.typography.headlineSmall.copy(
-                            fontWeight = FontWeight.Bold
-                        )
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold
                     )
                 },
                 navigationIcon = {
                     TextButton(
                         onClick = onBack,
                         colors = ButtonDefaults.textButtonColors(
-                            contentColor = BellyGreenDark // You can use Color.Black if you prefer
+                            contentColor = BellyGreenDark
                         )
                     ) {
                         Icon(
@@ -77,7 +75,8 @@ fun FoodLoggingScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+                    containerColor = Color.White,
+                    titleContentColor = Color.Black
                 )
             )
         },

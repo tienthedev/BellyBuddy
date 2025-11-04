@@ -12,28 +12,46 @@ import androidx.compose.ui.unit.dp
 import com.example.bellybuddy.R
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import com.example.bellybuddy.ui.theme.BellyGreenDark
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     onSelectBottom: (BottomItem) -> Unit,
-    onBack: (() -> Unit)? = null,
+    onBack: () -> Unit,
     onGoToSettings: (() -> Unit)? = null,
     onEditProfile: (() -> Unit)? = null
 ) {
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Profile") },
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        "Profile",
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
                 navigationIcon = {
-                    IconButton(onClick = { onBack?.invoke() }) {
+                    TextButton(
+                        onClick = onBack,
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = BellyGreenDark
+                        )
+                    ) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Back",
                             tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.White,
+                    titleContentColor = Color.Black
+                )
             )
         },
         bottomBar = {
@@ -53,10 +71,8 @@ fun ProfileScreen(
         ) {
             Surface(
                 shape = CircleShape,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f),
-                modifier = Modifier
-                    .padding(end = 12.dp)
-                    .size(100.dp)
+                color = Color.Transparent,
+                modifier = Modifier.size(100.dp)
             ) { Image(
                 painter = painterResource(id = R.drawable.profile_photo),
                 contentDescription = "Profile",
@@ -64,7 +80,8 @@ fun ProfileScreen(
                     .fillMaxSize()
             )
             }
-            Text("Robie")
+            Text("Robie",
+                    fontWeight = FontWeight.Bold)
 
             Button(
                 onClick = { onEditProfile?.invoke() },

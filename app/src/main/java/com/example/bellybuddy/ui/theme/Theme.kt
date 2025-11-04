@@ -15,8 +15,8 @@ private val DarkColorScheme = darkColorScheme(
     secondary = HealthBlueDark,
     onSecondary = White,
     tertiary = WarmOrangeDark,
-    background = SurfaceDark,
-    surface = SurfaceDark,
+    background = LightGray,
+    surface = LightGray,
     onSurface = OnSurfaceDark,
     error = ErrorRed,
     onError = White
@@ -28,8 +28,8 @@ private val LightColorScheme = lightColorScheme(
     secondary = HealthBlue,
     onSecondary = White,
     tertiary = WarmOrange,
-    background = SurfaceLight,
-    surface = SurfaceLight,
+    background = LightGray,
+    surface = LightGray,
     onSurface = OnSurfaceLight,
     error = ErrorRed,
     onError = White
@@ -38,7 +38,6 @@ private val LightColorScheme = lightColorScheme(
 @Composable
 fun BellyBuddyTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme

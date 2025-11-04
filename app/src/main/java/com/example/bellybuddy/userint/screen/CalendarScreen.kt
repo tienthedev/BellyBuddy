@@ -20,6 +20,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.bellybuddy.ui.theme.*
 import java.util.*
+import com.example.bellybuddy.userint.component.DailyScoreCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

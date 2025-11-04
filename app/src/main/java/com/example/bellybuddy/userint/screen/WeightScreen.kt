@@ -13,16 +13,16 @@ import com.example.bellybuddy.ui.theme.BellyGreenDark
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DailyJournalingScreen(
-    onSelectBottom: (BottomItem) -> Unit,
-    onBack: () -> Unit
+fun WeightScreen(
+    onBottomSelect: (BottomItem) -> Unit,
+    onBack: () -> Unit = {}
 ) {
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        "Daily Journal",
+                        "Weight",
                         color = Color.Black,
                         fontWeight = FontWeight.Bold
                     )
@@ -50,18 +50,27 @@ fun DailyJournalingScreen(
         bottomBar = {
             BottomToolBar(
                 selected = BottomItem.Grid,
-                onSelect = onSelectBottom
+                onSelect = onBottomSelect
             )
         }
     ) { padding ->
         Column(
-            modifier = Modifier
+            Modifier
                 .fillMaxSize()
                 .padding(padding)
                 .padding(16.dp)
         ) {
-            Text("Daily journaling stuff ehrehrherhe")
-            // Add your daily journaling UI here
+            Text(
+                "Here’s your detailed Weight view!",
+                style = MaterialTheme.typography.headlineSmall
+            )
+
+            Spacer(Modifier.height(20.dp))
+
+            Text(
+                "You can display charts, insights, or progress here.",
+                style = MaterialTheme.typography.bodyLarge
+            )
         }
     }
 }

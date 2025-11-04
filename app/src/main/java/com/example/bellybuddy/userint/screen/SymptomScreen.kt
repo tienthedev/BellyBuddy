@@ -56,15 +56,16 @@ fun SymptomScreen(
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        "Symptom Tracking",
-                        color = Color.Black
+                        "Symptom Tracker",
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold
                     )
                 },
                 navigationIcon = {
                     TextButton(
                         onClick = onBack,
                         colors = ButtonDefaults.textButtonColors(
-                            contentColor = BellyGreenDark // You can use Color.Black if you prefer
+                            contentColor = BellyGreenDark
                         )
                     ) {
                         Icon(
@@ -80,7 +81,6 @@ fun SymptomScreen(
                 )
             )
         },
-
         bottomBar = {
             BottomToolBar(
                 selected = BottomItem.Grid,

@@ -6,12 +6,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReminderScreen(
-    onSelectBottom: (BottomItem) -> Unit
+    onSelectBottom: (BottomItem) -> Unit,
+    onBack: () -> Unit = {}
 ) {
     Scaffold(
         topBar = {
