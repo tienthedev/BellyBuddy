@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.lerp
 import com.example.bellybuddy.R
 import java.util.Calendar
 import androidx.activity.compose.BackHandler
@@ -38,15 +39,22 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.pager.HorizontalPager
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.text.style.TextAlign
+import com.example.bellybuddy.data.model.DailyJournal
+import com.example.bellybuddy.ui.theme.BellyGreen
+import com.example.bellybuddy.ui.theme.BellyGreenDark
+import com.example.bellybuddy.viewmodel.DailyJournalViewModel
 import com.example.bellybuddy.viewmodel.UserViewModel
 import com.example.bellybuddy.viewmodel.UserViewModelFactory
-import com.example.bellybuddy.viewmodel.DailyJournalViewModel
-import com.example.bellybuddy.data.model.DailyJournal
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -57,22 +65,25 @@ import java.util.Locale
 fun DashboardScreen(
     onProfileClick: (() -> Unit)? = null,
     onBottomSelect: (BottomItem) -> Unit,
-    onLogout: (() -> Unit)? = null
+    onLogout: (() -> Unit)? = null // optional for later use
+
 ) {
-    // Get the application context to create the ViewModels
+    // --- START: ViewModel and Database Integration ---
+
+    // Get the application context to create the ViewModel
     val application = LocalContext.current.applicationContext as Application
 
-    // Instantiate the UserViewModel using our factory
+    // Instantiate the ViewModel using our factory
     val userViewModel: UserViewModel = viewModel(
         factory = UserViewModelFactory(application)
     )
 
-    // Instantiate the DailyJournalEntryViewModel
     val journalViewModel: DailyJournalViewModel = viewModel()
 
-    // Observe the loggedInUser StateFlow
+    // Observe the loggedInUser StateFlow. The UI will automatically recompose when this changes.
     val loggedInUser by userViewModel.loggedInUser.collectAsState()
 
+    // --- END: ViewModel and Database Integration ---
     val calendar = Calendar.getInstance()
     val hour = calendar.get(Calendar.HOUR_OF_DAY)
     val greeting = when (hour) {
@@ -81,7 +92,7 @@ fun DashboardScreen(
         else -> "Good Evening"
     }
 
-    val brand = Color(0xFF9DDB9E)
+    val brand = Color(0xFF9DDB9E) // light green accent
     val journalOpen = rememberSaveable { mutableStateOf(false) }
 
     Scaffold(
@@ -109,7 +120,8 @@ fun DashboardScreen(
                         Image(
                             painter = painterResource(id = R.drawable.profile_photo),
                             contentDescription = "Profile",
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier
+                                .fillMaxSize()
                         )
                     }
                 }
@@ -134,15 +146,22 @@ fun DashboardScreen(
             ) {
                 Spacer(Modifier.height(3.dp))
                 Text(
+                    // Use the user's name from the database, with a fallback.
                     text = "$greeting, ${loggedInUser?.name ?: "User"}",
                     style = MaterialTheme.typography.headlineMedium,
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
-
+                Spacer(Modifier.height(3.dp))
+                Text(
+                    text = "Today's Status",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold
+                    ),
+                    modifier = Modifier.padding(bottom = 12.dp)
+                )
                 Row(Modifier.fillMaxWidth()) {
                     DailyScoreCard(
-                        score = 88,
-                        ringColor = brand,
+                        score = 88, // This can be replaced later if you store score in the DB
                         modifier = Modifier
                             .weight(1f)
                             .height(150.dp)
@@ -150,6 +169,8 @@ fun DashboardScreen(
                     )
                     WeightCard(
                         title = "Weight",
+                        // Use the user's weight from the database.
+                        // The `?:` operator provides a default value if weight is null.
                         value = "${loggedInUser?.weight ?: "--"} lbs",
                         modifier = Modifier
                             .weight(1f)
@@ -157,7 +178,6 @@ fun DashboardScreen(
                             .padding(start = 8.dp)
                     )
                 }
-
                 Spacer(Modifier.height(16.dp))
 
                 ReminderCard(
@@ -167,9 +187,17 @@ fun DashboardScreen(
                         .fillMaxWidth()
                         .height(150.dp)
                 )
+                Spacer(Modifier.height(16.dp))
+
+                TodayStatusCards(
+                    foodItems = listOf("Oatmeal", "Grilled Chicken", "Salad"), // Replace with actual data
+                    symptoms = listOf("Bloating", "Headache"), // Replace with actual data
+                    bowelMovements = listOf("Morning - Normal"), // Replace with actual data
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
 
-            // Floating side button
+            // Floating side button (must be inside the Box)
             SideDockButton(
                 onClick = { journalOpen.value = true },
                 modifier = Modifier
@@ -177,7 +205,7 @@ fun DashboardScreen(
                     .offset(x = 8.dp)
             )
 
-            // Sliding sheet
+            // Sliding sheet (also inside the Box for .align)
             DailyJournalSheet(
                 open = journalOpen.value,
                 onClose = { journalOpen.value = false },
@@ -192,7 +220,6 @@ fun DashboardScreen(
                         mood = "",
                         notes = text
                     )
-
                     journalViewModel.insertJournalEntry(entry)
                     journalOpen.value = false
                 },
@@ -205,13 +232,16 @@ fun DashboardScreen(
 @Composable
 private fun DailyScoreCard(
     score: Int,
-    ringColor: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    borderColor: Color = BellyGreenDark
 ) {
-    Surface(
+    OutlinedCard(
+        modifier = modifier,
         shape = RoundedCornerShape(20.dp),
-        tonalElevation = 2.dp,
-        modifier = modifier
+        border = BorderStroke(2.dp, borderColor),
+        colors = CardDefaults.outlinedCardColors(
+            containerColor = BellyGreen.copy(alpha = 0.15f) // or your brand tint
+        )
     ) {
         Column(
             Modifier
@@ -223,7 +253,7 @@ private fun DailyScoreCard(
                 text = "$score",
                 style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
             )
-            Text("Daily Score", style = MaterialTheme.typography.titleMedium, color = ringColor)
+            Text("Daily Score", style = MaterialTheme.typography.titleMedium)
         }
     }
 }
@@ -232,12 +262,16 @@ private fun DailyScoreCard(
 private fun WeightCard(
     title: String,
     value: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    borderColor: Color = BellyGreenDark
 ) {
-    Surface(
+    OutlinedCard(
+        modifier = modifier,
         shape = RoundedCornerShape(20.dp),
-        tonalElevation = 2.dp,
-        modifier = modifier
+        border = BorderStroke(2.dp, borderColor),
+        colors = CardDefaults.outlinedCardColors(
+            containerColor = BellyGreen.copy(alpha = 0.15f) // or your brand tint
+        )
     ) {
         Column(
             Modifier
@@ -258,12 +292,16 @@ private fun WeightCard(
 private fun ReminderCard(
     title: String,
     message: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    borderColor: Color = BellyGreenDark
 ) {
-    Surface(
+    OutlinedCard(
+        modifier = modifier,
         shape = RoundedCornerShape(20.dp),
-        tonalElevation = 2.dp,
-        modifier = modifier
+        border = BorderStroke(2.dp, borderColor),
+        colors = CardDefaults.outlinedCardColors(
+            containerColor = BellyGreen.copy(alpha = 0.15f) // or your brand tint
+        )
     ) {
         Column(
             Modifier
@@ -285,12 +323,167 @@ private fun ReminderCard(
 }
 
 @Composable
+fun TodayStatusCards(
+    foodItems: List<String> = emptyList(),
+    symptoms: List<String> = emptyList(),
+    bowelMovements: List<String> = emptyList(),
+    modifier: Modifier = Modifier
+) {
+    val pagerState = rememberPagerState(pageCount = { 3 })
+
+    Column(
+        modifier = modifier
+    ) {
+        // Swipeable cards
+        HorizontalPager(
+            state = pagerState,
+            contentPadding = PaddingValues(horizontal = 32.dp),
+            pageSpacing = 16.dp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(180.dp)
+        ) { page ->
+            when (page) {
+                0 -> StatusCard(
+                    title = "Food",
+                    iconRes = R.drawable.ic_food,
+                    items = foodItems,
+                    emptyMessage = "No food logged today",
+                    backgroundColor = BellyGreen.copy(alpha = 0.15f),
+                    borderColor = BellyGreen
+                )
+                1 -> StatusCard(
+                    title = "Symptoms",
+                    iconRes = R.drawable.ic_symptoms,
+                    items = symptoms,
+                    emptyMessage = "No symptoms recorded",
+                    backgroundColor = Color(0xFFFFE0B2).copy(alpha = 0.3f),
+                    borderColor = Color(0xFFFFA726)
+                )
+                2 -> StatusCard(
+                    title = "Bowel Movement",
+                    iconRes = R.drawable.ic_toilet,
+                    items = bowelMovements,
+                    emptyMessage = "No bowel movements logged",
+                    backgroundColor = Color(0xFFE1BEE7).copy(alpha = 0.3f),
+                    borderColor = Color(0xFFAB47BC)
+                )
+            }
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        // Page indicators
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            repeat(3) { index ->
+                Box(
+                    modifier = Modifier
+                        .size(if (pagerState.currentPage == index) 24.dp else 8.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (pagerState.currentPage == index)
+                                BellyGreen
+                            else
+                                BellyGreen.copy(alpha = 0.3f)
+                        )
+                )
+                if (index < 2) {
+                    Spacer(Modifier.width(8.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun StatusCard(
+    title: String,
+    iconRes: Int? = null,
+    items: List<String>,
+    emptyMessage: String,
+    backgroundColor: Color,
+    modifier: Modifier = Modifier,
+    borderColor: Color? = null
+) {
+    val respectedColor = borderColor ?: lerp(backgroundColor, Color.Black, 0.25f)
+
+    OutlinedCard(
+        modifier = modifier.fillMaxSize(),
+        shape = RoundedCornerShape(24.dp),
+        border = BorderStroke(2.dp, respectedColor),
+        colors = CardDefaults.outlinedCardColors(containerColor = backgroundColor)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(20.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                )
+                if (iconRes != null) {
+                    Spacer(Modifier.width(8.dp))
+                    Icon(
+                        painter = painterResource(id = iconRes),
+                        contentDescription = title,
+                        modifier = Modifier.size(40.dp),   // smaller so it fits nicely next to text
+                        tint = Color.Unspecified
+                    )
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+
+            if (items.isEmpty()) {
+                Text(
+                    text = emptyMessage,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                    textAlign = TextAlign.Start
+                )
+            } else {
+                Column(
+                    modifier = Modifier.weight(1f, fill = false),
+                    verticalArrangement = Arrangement.Top
+                ) {
+                    items.take(3).forEach { item ->
+                        Text(
+                            text = "• $item",
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(vertical = 2.dp)
+                        )
+                    }
+                    if (items.size > 3) {
+                        Text(
+                            text = "+${items.size - 3} more",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun SideDockButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Surface(
-        color = Color(0xFF9DDB9E),
+        color = Color(0xFF9DDB9E), // your brand green
         shape = RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp),
         shadowElevation = 6.dp,
         modifier = modifier
@@ -327,14 +520,14 @@ private fun DailyJournalSheet(
             Modifier
                 .fillMaxSize()
                 .background(Color.Black.copy(alpha = 0.35f))
-                .clickable { onClose() }
+                .clickable { onClose() } // tap outside to close
         )
     }
 
     AnimatedVisibility(
         visible = open,
         enter = slideInHorizontally(initialOffsetX = { it }) + fadeIn(),
-        exit = slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
+        exit  = slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
     ) {
         Surface(
             shape = RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp),
@@ -342,7 +535,7 @@ private fun DailyJournalSheet(
             shadowElevation = 8.dp,
             modifier = modifier
                 .fillMaxHeight()
-                .fillMaxWidth(1f)
+                .fillMaxWidth(1f) // sheet width (85% of screen); tweak as you like
         ) {
             var text by remember { mutableStateOf("") }
 
@@ -374,51 +567,38 @@ private fun DailyJournalSheet(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    OutlinedButton(
-                        onClick = {
-                            text = ""
-                            onClose()
-                        },
+                    Button(
+                        onClick = onClose,
                         modifier = Modifier.weight(1f)
-                    ) {
-                        Text("Cancel")
-                    }
+                    ) { Text("Cancel") }
 
                     Button(
-                        onClick = {
-                            if (text.isNotBlank()) {
-                                onSave(text)
-                                text = ""
-                            }
-                        },
-                        modifier = Modifier.weight(1f),
-                        enabled = text.isNotBlank()
-                    ) {
-                        Text("Save")
-                    }
+                        onClick = { onSave(text) },
+                        modifier = Modifier.weight(1f)
+                    ) { Text("Save") }
                 }
             }
         }
     }
 }
 
-enum class BottomItem { Settings, Grid, Home, Calendar, Bell }
-
+enum class BottomItem { Settings, Grid, Home, Calendar, Bell}
 @Composable
 fun BottomToolBar(
     selected: BottomItem,
     onSelect: (BottomItem) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // This Surface floats above the nav bar area and has big rounded corners
     Surface(
-        color = Color(0xFF121212),
+        color = Color(0xFF121212),            // black-ish
         tonalElevation = 8.dp,
         shadowElevation = 12.dp,
         shape = RoundedCornerShape(28.dp),
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 12.dp)
-            .navigationBarsPadding()
+            .navigationBarsPadding()         // keep above gesture bar
     ) {
         Row(
             modifier = Modifier
@@ -430,36 +610,37 @@ fun BottomToolBar(
                 item = BottomItem.Settings,
                 selected = selected == BottomItem.Settings,
                 onClick = { onSelect(BottomItem.Settings) },
-                painter = painterResource(R.drawable.settings)
+                painter = painterResource(R.drawable.settings) // your vector
             )
             ToolbarIcon(
                 item = BottomItem.Grid,
                 selected = selected == BottomItem.Grid,
                 onClick = { onSelect(BottomItem.Grid) },
-                painter = painterResource(R.drawable.grid)
+                painter = painterResource(R.drawable.grid) // your vector
             )
             ToolbarIcon(
                 item = BottomItem.Home,
                 selected = selected == BottomItem.Home,
                 onClick = { onSelect(BottomItem.Home) },
-                painter = painterResource(R.drawable.home)
+                painter = painterResource(R.drawable.home) // your vector
             )
             ToolbarIcon(
                 item = BottomItem.Calendar,
                 selected = selected == BottomItem.Calendar,
                 onClick = { onSelect(BottomItem.Calendar) },
-                painter = painterResource(R.drawable.calendar)
+                painter = painterResource(R.drawable.calendar) // your vector
             )
             ToolbarIcon(
                 item = BottomItem.Bell,
                 selected = selected == BottomItem.Bell,
                 onClick = { onSelect(BottomItem.Bell) },
-                painter = painterResource(R.drawable.bell)
+                painter = painterResource(R.drawable.bell) // your vector
             )
         }
     }
 }
 
+// --- Single icon with selected highlight + optional red dot for Bell ---
 @Composable
 private fun ToolbarIcon(
     item: BottomItem,
@@ -467,7 +648,6 @@ private fun ToolbarIcon(
     onClick: () -> Unit,
     painter: Painter,
 ) {
-    val highlight = Color(0xFF9DDB9E)
 
     Box(
         contentAlignment = Alignment.Center,
@@ -475,9 +655,10 @@ private fun ToolbarIcon(
             .size(44.dp)
             .clickable(onClick = onClick)
     ) {
+        // Selected: green circular background
         if (selected) {
             Surface(
-                color = highlight,
+                color = BellyGreen,
                 shape = CircleShape,
                 modifier = Modifier.size(36.dp)
             ) {}
