@@ -1,6 +1,10 @@
 package com.example.bellybuddy.userint.screen
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -13,7 +17,8 @@ fun GridScreen(
     onBowelMovementClick: () -> Unit,
     onJournalClick: () -> Unit,
     onFoodLogClick: () -> Unit,
-    onSymptomClick: () -> Unit
+    onSymptomClick: () -> Unit,
+    onUserListClick: () -> Unit
 ) {
     Scaffold(
         topBar = { TopAppBar(title = { Text("All Features") }) },
@@ -58,6 +63,13 @@ fun GridScreen(
             ) {
                 Text("Bowel Movements")
             }
+            Button(
+                onClick = onUserListClick,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("View Database Users")
+            }
+
         }
     }
 }

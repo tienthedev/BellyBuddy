@@ -19,6 +19,7 @@ import com.example.bellybuddy.userint.screen.SymptomScreen
 import com.example.bellybuddy.userint.screen.EditProfileScreen
 import com.example.bellybuddy.userint.screen.DailyScoreScreen
 import com.example.bellybuddy.userint.screen.WeightScreen
+import com.example.bellybuddy.userint.screen.UserListScreen
 
 @Composable
 fun AppNavHost(navController: NavHostController) {
@@ -39,6 +40,15 @@ fun AppNavHost(navController: NavHostController) {
         composable(Route.Login.path) {
             LoginScreen(
                 onLoginSuccess = { go(Route.Dashboard) }
+            )
+        }
+
+
+
+        // Add the new destination to the NavHost
+        composable(Route.UserList.path) {
+            UserListScreen(
+                onBack = { navController.popBackStack() }
             )
         }
 
@@ -88,7 +98,8 @@ fun AppNavHost(navController: NavHostController) {
                 onJournalClick = { go(Route.DailyJournaling) },
                 onFoodLogClick = { go(Route.FoodLogging) },
                 onSymptomClick = { go(Route.SymptomTracking) },
-                onBowelMovementClick = { go(Route.BowelMovementTracking) }
+                onBowelMovementClick = { go(Route.BowelMovementTracking) },
+                onUserListClick = { navController.navigate(Route.UserList.path) }
             )
         }
 

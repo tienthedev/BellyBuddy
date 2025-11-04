@@ -15,11 +15,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.border
 import com.example.bellybuddy.ui.theme.*
+import com.example.bellybuddy.R
 import java.util.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.foundation.BorderStroke
 import com.example.bellybuddy.userint.component.DailyScoreCard
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -143,11 +150,13 @@ private fun MonthNavigationHeader(
         "July", "August", "September", "October", "November", "December"
     )
 
-    Card(
+    OutlinedCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = BellyGreenLight.copy(alpha = 0.2f)
+        border = BorderStroke(1.5.dp, BellyGreen.copy(alpha = 0.8f)),
+        colors = CardDefaults.outlinedCardColors(
+            containerColor = BellyGreenLight.copy(alpha = 0.2f),
+            contentColor = MaterialTheme.colorScheme.onSurface
         )
     ) {
         Row(
@@ -157,14 +166,20 @@ private fun MonthNavigationHeader(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(
+            OutlinedIconButton(
                 onClick = onPreviousMonth,
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(BellyGreen.copy(alpha = 0.2f))
+                modifier = Modifier.size(44.dp),
+                border = BorderStroke(1.5.dp, BellyGreen.copy(alpha = 0.8f)),
+                colors = IconButtonDefaults.outlinedIconButtonColors(
+                    containerColor = BellyGreenLight.copy(alpha = 0.25f),
+                    contentColor = BellyGreenDark
+                )
             ) {
-                Text("‹", style = MaterialTheme.typography.headlineSmall, color = BellyGreen)
+                Icon(
+                    imageVector = Icons.Filled.ChevronLeft,
+                    contentDescription = "Previous month",
+                    modifier = Modifier.size(24.dp)
+                )
             }
 
             Text(
@@ -175,14 +190,20 @@ private fun MonthNavigationHeader(
                 color = MaterialTheme.colorScheme.onSurface
             )
 
-            IconButton(
+            OutlinedIconButton(
                 onClick = onNextMonth,
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(BellyGreen.copy(alpha = 0.2f))
+                modifier = Modifier.size(44.dp),
+                border = BorderStroke(1.5.dp, BellyGreen.copy(alpha = 0.8f)),
+                colors = IconButtonDefaults.outlinedIconButtonColors(
+                    containerColor = BellyGreenLight.copy(alpha = 0.25f),
+                    contentColor = BellyGreenDark
+                )
             ) {
-                Text("›", style = MaterialTheme.typography.headlineSmall, color = BellyGreen)
+                Icon(
+                    imageVector = Icons.Filled.ChevronRight,
+                    contentDescription = "Next month",
+                    modifier = Modifier.size(24.dp)
+                )
             }
         }
     }
@@ -274,24 +295,31 @@ private fun CalendarDayCell(
     healthData: HealthDayData?,
     onDaySelected: () -> Unit
 ) {
+    val shape = RoundedCornerShape(12.dp)
+    val borderColor = when {
+        isSelected -> BellyGreenDark
+        isToday    -> BellyGreen.copy(alpha = 0.6f)
+        else       -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f)
+    }
+    val borderWidth = if (isSelected) 2.dp else 1.dp
+
     Box(
         modifier = Modifier
             .aspectRatio(1f)
-            .clip(RoundedCornerShape(12.dp))
+            .border(borderWidth, borderColor, shape)
             .background(
-                when {
+                color = when {
                     isSelected -> BellyGreen
-                    isToday -> BellyGreen.copy(alpha = 0.3f)
-                    else -> Color.Transparent
-                }
+                    isToday    -> BellyGreen.copy(alpha = 0.15f)
+                    else       -> Color.Transparent
+                },
+                shape = shape
             )
             .clickable { onDaySelected() }
             .padding(4.dp),
         contentAlignment = Alignment.Center
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = day.toString(),
                 style = MaterialTheme.typography.bodyMedium.copy(
@@ -299,12 +327,10 @@ private fun CalendarDayCell(
                 ),
                 color = when {
                     isSelected -> Color.White
-                    isToday -> BellyGreenDark
-                    else -> MaterialTheme.colorScheme.onSurface
+                    isToday    -> BellyGreenDark
+                    else       -> MaterialTheme.colorScheme.onSurface
                 }
             )
-
-            // Health indicator dot
             healthData?.let {
                 Box(
                     modifier = Modifier
@@ -334,6 +360,8 @@ private fun SelectedDateInfo(
         "January", "February", "March", "April", "May", "June",
         "July", "August", "September", "October", "November", "December"
     )
+
+    var selectedTab by remember { mutableStateOf(DayInfoTab.Food) }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -381,32 +409,112 @@ private fun SelectedDateInfo(
                         )
                     }
 
-                    // Food Consumed Section
-                    Column {
-                        Text(
-                            text = "Food Consumed",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            text = "No food recorded for this day.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
+                    // Circle tab buttons
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        DayInfoTab.values().forEach { tab ->
+                            CircleTabButton(
+                                label = tab.label,
+                                isSelected = selectedTab == tab,
+                                onClick = { selectedTab = tab }
+                            )
+                            if (tab != DayInfoTab.values().last()) {
+                                Spacer(Modifier.width(12.dp))
+                            }
+                        }
                     }
 
-                    // Supplements Section
-                    Column {
-                        Text(
-                            text = "Supplements",
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                    // Content based on selected tab
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 100.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = BellyGreenLight.copy(alpha = 0.1f)
                         )
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            text = "No supplements recorded for this day.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                        )
+                    ) {
+                        Box(
+                            modifier = Modifier.padding(16.dp)
+                        ) {
+                            when (selectedTab) {
+                                DayInfoTab.Food -> {
+                                    if (data.food.isEmpty()) {
+                                        Text(
+                                            text = "No food recorded for this day.",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                        )
+                                    } else {
+                                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            data.food.forEach { foodItem ->
+                                                Text(
+                                                    text = "• $foodItem",
+                                                    style = MaterialTheme.typography.bodyMedium
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                                DayInfoTab.Symptoms -> {
+                                    if (data.symptoms.isEmpty()) {
+                                        Text(
+                                            text = "No symptoms recorded for this day.",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                        )
+                                    } else {
+                                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            data.symptoms.forEach { symptom ->
+                                                Text(
+                                                    text = "• $symptom",
+                                                    style = MaterialTheme.typography.bodyMedium
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                                DayInfoTab.Bowel -> {
+                                    if (data.bowel.isEmpty()) {
+                                        Text(
+                                            text = "No bowel movements recorded for this day.",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                        )
+                                    } else {
+                                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            data.bowel.forEach { bowel ->
+                                                Text(
+                                                    text = "• $bowel",
+                                                    style = MaterialTheme.typography.bodyMedium
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                                DayInfoTab.Journal -> {
+                                    if (data.journal.isEmpty()) {
+                                        Text(
+                                            text = "No journal notes recorded for this day.",
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                        )
+                                    } else {
+                                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            data.journal.forEach { journal ->
+                                                Text(
+                                                    text = "• $journal",
+                                                    style = MaterialTheme.typography.bodyMedium
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             } ?: run {
@@ -417,6 +525,61 @@ private fun SelectedDateInfo(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun CircleTabButton(
+    label: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = Modifier.clickable(onClick = onClick)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(60.dp)
+                .clip(CircleShape)
+                .background(
+                    if (isSelected) BellyGreen else BellyGreenLight.copy(alpha = 0.3f)
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            val iconRes = getIconResourceForTab(label)
+            if (iconRes != null) {
+                Icon(
+                    painter = painterResource(id = iconRes),
+                    contentDescription = label,
+                    modifier = Modifier.size(32.dp),
+                    tint = Color.Unspecified  // This preserves the original PNG colors
+                )
+            } else {
+                Text(
+                    text = label.firstOrNull()?.uppercase() ?: "",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                )
+            }
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = if (isSelected) BellyGreen else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+        )
+    }
+}
+
+private fun getIconResourceForTab(label: String): Int? {
+    return when (label) {
+        "Food" -> R.drawable.ic_food
+        "Symptoms" -> R.drawable.ic_symptoms
+        "Bowel" -> R.drawable.ic_toilet
+        "Journal" -> R.drawable.ic_journal
+        else -> null
     }
 }
 
@@ -457,11 +620,20 @@ private fun HealthMetricCard(
     }
 }
 
+enum class DayInfoTab(val label: String) {
+    Food("Food"),
+    Symptoms("Symptoms"),
+    Bowel("Bowel"),
+    Journal("Journal")
+}
+
 data class HealthDayData(
     val score: Int,
     val weight: Double,
     val food: List<String>,
-    val supplements: List<String>
+    val symptoms: List<String>,
+    val bowel: List<String>,
+    val journal: List<String>
 )
 
 private fun generateSampleHealthData(month: Int, year: Int): Map<Int, HealthDayData> {
@@ -484,7 +656,9 @@ private fun generateSampleHealthData(month: Int, year: Int): Map<Int, HealthDayD
             score = (60..95).random(),
             weight = (150..160).random() + Math.random(),
             food = emptyList(),
-            supplements = emptyList()
+            symptoms = emptyList(),
+            bowel = emptyList(),
+            journal = emptyList()
         )
     }
     return data
