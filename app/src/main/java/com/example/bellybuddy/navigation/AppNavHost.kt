@@ -43,8 +43,6 @@ fun AppNavHost(navController: NavHostController) {
             )
         }
 
-
-
         // Add the new destination to the NavHost
         composable(Route.UserList.path) {
             UserListScreen(
@@ -67,6 +65,7 @@ fun AppNavHost(navController: NavHostController) {
                 onLogout = { navController.popBackStack(Route.Login.path, inclusive = false) },
                 onDailyScoreClick = { navController.navigate(Route.DailyScore.path) },
                 onWeightClick = { navController.navigate(Route.Weight.path) },
+                onReminderClick = { go(Route.Bell) }
             )
         }
 
