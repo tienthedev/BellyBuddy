@@ -2,9 +2,7 @@
 
 BellyBuddy is an Android application built to demonstrate modern mobile development practices. It serves as a foundation for a personal health tracker, allowing users to register, log in, and view user-specific data from a local database. The project emphasizes clean architecture, a reactive UI, and robust data persistence.
 
-![BellyBuddy App Screenshot (Placeholder)](https://i.imgur.com/K5a0q9B.png)
 
-*(Note: You can replace the placeholder image with a real screenshot of your app's dashboard.)*
 
 ---
 
@@ -45,21 +43,4 @@ This project is built with a focus on modern, scalable, and maintainable Android
 
 ---
 
-## 🏛️ Project Architecture
 
-The application follows a standard clean architecture pattern, ensuring separation of concerns and making the codebase testable and scalable.
-+---------------------+ |         UI          |  (Jetpack Compose Screens: Dashboard, Login, etc.) +---------------------+ v +---------------------+ |      ViewModel      |  (UserViewModel: Manages UI state and business logic) +---------------------+ v +---------------------+ |     Repository      |  (UserRepository: Single source of truth for data) +---------------------+ v +---------------------+ |     Data Source     |  (Room Database: DAO interfaces and local SQLite storage) +---------------------+
-
----
-
-## ⚙️ Setup & Installation
-
-To build and run this project locally, you will need:
-
-1.  **Android Studio** (latest stable version recommended, e.g., Iguana or newer).
-2.  An Android Emulator or a physical device running **Android API 26 (Oreo)** or higher.
-
-Follow these steps:
-
-1.  **Clone the repository:**
-    
