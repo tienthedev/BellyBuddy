@@ -18,7 +18,9 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import com.example.bellybuddy.ui.theme.BellyGreenDark
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -41,11 +43,16 @@ fun EditProfileScreen(
             }
         }
     )
-
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Edit Profile") },
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        "Edit Profile",
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
                 navigationIcon = {
                     TextButton(
                         onClick = onBack,
@@ -59,9 +66,13 @@ fun EditProfileScreen(
                             tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.White,
+                    titleContentColor = Color.Black
+                )
             )
-        }
+        },
     ) { padding ->
         Column(
             modifier = Modifier

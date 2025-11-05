@@ -1,15 +1,10 @@
 package com.example.bellybuddy.userint.screen
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import com.example.bellybuddy.R
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.ui.graphics.Color
@@ -18,18 +13,16 @@ import com.example.bellybuddy.ui.theme.BellyGreenDark
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen(
-    onSelectBottom: (BottomItem) -> Unit,
-    onBack: () -> Unit,
-    onGoToSettings: (() -> Unit)? = null,
-    onEditProfile: (() -> Unit)? = null
+fun WeightScreen(
+    onBottomSelect: (BottomItem) -> Unit,
+    onBack: () -> Unit = {}
 ) {
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        "Profile",
+                        "Weight",
                         color = Color.Black,
                         fontWeight = FontWeight.Bold
                     )
@@ -56,8 +49,8 @@ fun ProfileScreen(
         },
         bottomBar = {
             BottomToolBar(
-                selected = BottomItem.Home,
-                onSelect = onSelectBottom
+                selected = BottomItem.Grid,
+                onSelect = onBottomSelect
             )
         }
     ) { padding ->
@@ -65,33 +58,19 @@ fun ProfileScreen(
             Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(16.dp)
         ) {
-            Surface(
-                shape = CircleShape,
-                color = Color.Transparent,
-                modifier = Modifier.size(100.dp)
-            ) { Image(
-                painter = painterResource(id = R.drawable.profile_photo),
-                contentDescription = "Profile",
-                modifier = Modifier
-                    .fillMaxSize()
+            Text(
+                "Here’s your detailed Weight view!",
+                style = MaterialTheme.typography.headlineSmall
             )
-            }
-            Text("Robie",
-                    fontWeight = FontWeight.Bold)
 
-            Button(
-                onClick = { onEditProfile?.invoke() },
-                modifier = Modifier.fillMaxWidth()
-            ) { Text("Edit Profile") }
+            Spacer(Modifier.height(20.dp))
 
-            Button(
-                onClick = { onGoToSettings?.invoke() },
-                modifier = Modifier.fillMaxWidth()
-            ) { Text("Go to Settings") }
+            Text(
+                "You can display charts, insights, or progress here.",
+                style = MaterialTheme.typography.bodyLarge
+            )
         }
     }
 }

@@ -17,6 +17,8 @@ import com.example.bellybuddy.userint.screen.ReminderScreen
 import com.example.bellybuddy.userint.screen.ProfileScreen
 import com.example.bellybuddy.userint.screen.SymptomScreen
 import com.example.bellybuddy.userint.screen.EditProfileScreen
+import com.example.bellybuddy.userint.screen.DailyScoreScreen
+import com.example.bellybuddy.userint.screen.WeightScreen
 import com.example.bellybuddy.userint.screen.UserListScreen
 
 @Composable
@@ -62,7 +64,9 @@ fun AppNavHost(navController: NavHostController) {
                         BottomItem.Bell     -> go(Route.Bell)
                     }
                 },
-                onLogout = { navController.popBackStack(Route.Login.path, inclusive = false) }
+                onLogout = { navController.popBackStack(Route.Login.path, inclusive = false) },
+                onDailyScoreClick = { navController.navigate(Route.DailyScore.path) },
+                onWeightClick = { navController.navigate(Route.Weight.path) },
             )
         }
 
@@ -211,5 +215,38 @@ fun AppNavHost(navController: NavHostController) {
             )
         }
 
+        composable(Route.DailyScore.path) {
+            DailyScoreScreen(
+                onBottomSelect = { item ->
+                    when (item) {
+                        BottomItem.Home     -> go(Route.Dashboard)
+                        BottomItem.Settings -> go(Route.Settings)
+                        BottomItem.Grid     -> go(Route.Grid)
+                        BottomItem.Calendar -> go(Route.Calendar)
+                        BottomItem.Bell     -> go(Route.Bell)
+                    }
+                },
+                onBack = {
+                    navController.popBackStack(Route.Dashboard.path, inclusive = false)
+                }
+            )
+        }
+
+        composable(Route.Weight.path) {
+            WeightScreen(
+                onBottomSelect = { item ->
+                    when (item) {
+                        BottomItem.Home     -> go(Route.Dashboard)
+                        BottomItem.Settings -> go(Route.Settings)
+                        BottomItem.Grid     -> go(Route.Grid)
+                        BottomItem.Calendar -> go(Route.Calendar)
+                        BottomItem.Bell     -> go(Route.Bell)
+                    }
+                },
+                onBack = {
+                    navController.popBackStack(Route.Dashboard.path, inclusive = false)
+                }
+            )
+        }
     }
 }

@@ -70,7 +70,13 @@ fun SymptomScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Symptom Tracking", color = Color.Black) },
+                title = {
+                    Text(
+                        "Symptom Tracker",
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
                 navigationIcon = {
                     TextButton(
                         onClick = onBack,

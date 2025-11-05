@@ -42,6 +42,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.graphics.painter.Painter
+import com.example.bellybuddy.ui.theme.BellyGreen
+import com.example.bellybuddy.userint.component.DailyScoreCard
+import com.example.bellybuddy.userint.component.WeightCard
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.clip
@@ -65,7 +68,9 @@ import java.util.Locale
 fun DashboardScreen(
     onProfileClick: (() -> Unit)? = null,
     onBottomSelect: (BottomItem) -> Unit,
-    onLogout: (() -> Unit)? = null // optional for later use
+    onLogout: (() -> Unit)? = null, // optional for later use
+    onDailyScoreClick: (() -> Unit)? = null,
+    onWeightClick: (() -> Unit)? = null
 
 ) {
     // --- START: ViewModel and Database Integration ---
@@ -120,8 +125,7 @@ fun DashboardScreen(
                         Image(
                             painter = painterResource(id = R.drawable.profile_photo),
                             contentDescription = "Profile",
-                            modifier = Modifier
-                                .fillMaxSize()
+                            modifier = Modifier.fillMaxSize()
                         )
                     }
                 }
@@ -146,9 +150,8 @@ fun DashboardScreen(
             ) {
                 Spacer(Modifier.height(3.dp))
                 Text(
-                    // Use the user's name from the database, with a fallback.
-                    text = "$greeting, ${loggedInUser?.name ?: "User"}",
-                    style = MaterialTheme.typography.headlineMedium,
+                    text = "$greeting, Robie",
+                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
                 Spacer(Modifier.height(3.dp))
@@ -165,7 +168,8 @@ fun DashboardScreen(
                         modifier = Modifier
                             .weight(1f)
                             .height(150.dp)
-                            .padding(end = 8.dp)
+                            .padding(end = 8.dp),
+                        onClick = { onDailyScoreClick?.invoke() }
                     )
                     WeightCard(
                         title = "Weight",
@@ -175,7 +179,8 @@ fun DashboardScreen(
                         modifier = Modifier
                             .weight(1f)
                             .height(150.dp)
-                            .padding(start = 8.dp)
+                            .padding(start = 8.dp),
+                        onClick = { onWeightClick?.invoke() }
                     )
                 }
                 Spacer(Modifier.height(16.dp))
@@ -197,7 +202,6 @@ fun DashboardScreen(
                 )
             }
 
-            // Floating side button (must be inside the Box)
             SideDockButton(
                 onClick = { journalOpen.value = true },
                 modifier = Modifier
@@ -205,7 +209,6 @@ fun DashboardScreen(
                     .offset(x = 8.dp)
             )
 
-            // Sliding sheet (also inside the Box for .align)
             DailyJournalSheet(
                 open = journalOpen.value,
                 onClose = { journalOpen.value = false },
@@ -230,65 +233,6 @@ fun DashboardScreen(
 }
 
 @Composable
-private fun DailyScoreCard(
-    score: Int,
-    modifier: Modifier = Modifier,
-    borderColor: Color = BellyGreenDark
-) {
-    OutlinedCard(
-        modifier = modifier,
-        shape = RoundedCornerShape(20.dp),
-        border = BorderStroke(2.dp, borderColor),
-        colors = CardDefaults.outlinedCardColors(
-            containerColor = BellyGreen.copy(alpha = 0.15f) // or your brand tint
-        )
-    ) {
-        Column(
-            Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = "$score",
-                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
-            )
-            Text("Daily Score", style = MaterialTheme.typography.titleMedium)
-        }
-    }
-}
-
-@Composable
-private fun WeightCard(
-    title: String,
-    value: String,
-    modifier: Modifier = Modifier,
-    borderColor: Color = BellyGreenDark
-) {
-    OutlinedCard(
-        modifier = modifier,
-        shape = RoundedCornerShape(20.dp),
-        border = BorderStroke(2.dp, borderColor),
-        colors = CardDefaults.outlinedCardColors(
-            containerColor = BellyGreen.copy(alpha = 0.15f) // or your brand tint
-        )
-    ) {
-        Column(
-            Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                value,
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
-            )
-            Text(title, style = MaterialTheme.typography.titleMedium)
-        }
-    }
-}
-
-@Composable
 private fun ReminderCard(
     title: String,
     message: String,
@@ -298,6 +242,7 @@ private fun ReminderCard(
     OutlinedCard(
         modifier = modifier,
         shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         border = BorderStroke(2.dp, borderColor),
         colors = CardDefaults.outlinedCardColors(
             containerColor = BellyGreen.copy(alpha = 0.15f) // or your brand tint
@@ -306,17 +251,19 @@ private fun ReminderCard(
         Column(
             Modifier
                 .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.Top
+                .padding(20.dp),
+            verticalArrangement = Arrangement.Center
         ) {
             Text(
                 title,
-                style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold)
+                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                color = MaterialTheme.colorScheme.onSurface
             )
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(8.dp))
             Text(
                 message,
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
             )
         }
     }
@@ -483,7 +430,7 @@ private fun SideDockButton(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        color = Color(0xFF9DDB9E), // your brand green
+        color = BellyGreen,
         shape = RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp),
         shadowElevation = 6.dp,
         modifier = modifier

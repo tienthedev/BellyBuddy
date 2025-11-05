@@ -201,7 +201,13 @@ fun BowelMovementScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("Log Bowel Movement", color = Color.Black) },
+                title = {
+                    Text(
+                        "Log Bowel Movement",
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
                 navigationIcon = {
                     TextButton(
                         onClick = onBack,

@@ -27,7 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.foundation.BorderStroke
-
+import com.example.bellybuddy.userint.component.DailyScoreCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -348,7 +348,6 @@ private fun CalendarDayCell(
         }
     }
 }
-
 
 @Composable
 private fun SelectedDateInfo(
