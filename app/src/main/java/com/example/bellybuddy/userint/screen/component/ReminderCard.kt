@@ -14,6 +14,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -34,15 +35,13 @@ fun ReminderCard(
             .clickable { onClick?.invoke() },
         shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        border = BorderStroke(2.dp, borderColor),
-        colors = CardDefaults.outlinedCardColors(
-            containerColor = BellyGreen.copy(alpha = 0.15f) // or your brand tint
-        )
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFF3F4F6))
     ) {
         Column(
             Modifier
                 .fillMaxSize()
                 .padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             Text(
