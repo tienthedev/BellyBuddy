@@ -4,6 +4,8 @@ import android.app.Application
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
@@ -12,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.bellybuddy.ui.theme.BellyGreenDark
 import com.example.bellybuddy.viewmodel.UserViewModel
 import com.example.bellybuddy.viewmodel.UserViewModelFactory
 
@@ -29,12 +32,20 @@ fun UserListScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
+            CenterAlignedTopAppBar(
                 title = { Text("Database Users") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        // Replace with your actual back icon if you have one
-                        // Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    TextButton(
+                        onClick = onBack,
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = BellyGreenDark
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Back",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
                     }
                 }
             )
