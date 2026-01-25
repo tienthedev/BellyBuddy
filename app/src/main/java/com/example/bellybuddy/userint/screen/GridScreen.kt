@@ -16,7 +16,9 @@ fun GridScreen(
     onSelectBottom: (BottomItem) -> Unit,
     onBowelMovementClick: () -> Unit,
     onJournalClick: () -> Unit,
+    onWeightClickv2: () -> Unit,
     onFoodLogClick: () -> Unit,
+    onDailyScoreClickv2: () -> Unit,
     onSymptomClick: () -> Unit,
     onUserListClick: () -> Unit
 ) {
@@ -42,21 +44,30 @@ fun GridScreen(
             ) {
                 Text("Daily Journal")
             }
-
+            Button(
+                onClick = onDailyScoreClickv2,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Daily Score")
+            }
+            Button(
+                onClick = onWeightClickv2,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Weight")
+            }
             Button(
                 onClick = onFoodLogClick,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Food Log")
             }
-
             Button(
                 onClick = onSymptomClick,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Symptom Tracker")
             }
-
             Button(
                 onClick = onBowelMovementClick,
                 modifier = Modifier.fillMaxWidth()
