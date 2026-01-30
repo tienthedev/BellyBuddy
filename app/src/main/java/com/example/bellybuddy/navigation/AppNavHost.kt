@@ -96,6 +96,8 @@ fun AppNavHost(navController: NavHostController) {
                 },
                 onJournalClick = { go(Route.DailyJournaling) },
                 onFoodLogClick = { go(Route.FoodLogging) },
+                onDailyScoreClickv2 = { navController.navigate(Route.DailyScore.path) },
+                onWeightClickv2 = { navController.navigate(Route.Weight.path) },
                 onSymptomClick = { go(Route.SymptomTracking) },
                 onBowelMovementClick = { go(Route.BowelMovementTracking) },
                 onUserListClick = { navController.navigate(Route.UserList.path) }
@@ -225,9 +227,7 @@ fun AppNavHost(navController: NavHostController) {
                         BottomItem.Bell     -> go(Route.Bell)
                     }
                 },
-                onBack = {
-                    navController.popBackStack(Route.Dashboard.path, inclusive = false)
-                }
+                onBack = { navController.popBackStack() }
             )
         }
 
@@ -242,9 +242,7 @@ fun AppNavHost(navController: NavHostController) {
                         BottomItem.Bell     -> go(Route.Bell)
                     }
                 },
-                onBack = {
-                    navController.popBackStack(Route.Dashboard.path, inclusive = false)
-                }
+                onBack = { navController.popBackStack() }
             )
         }
     }

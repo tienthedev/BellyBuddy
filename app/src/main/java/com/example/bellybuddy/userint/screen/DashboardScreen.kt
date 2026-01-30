@@ -70,7 +70,8 @@ fun DashboardScreen(
     onLogout: (() -> Unit)? = null, // optional for later use
     onDailyScoreClick: (() -> Unit)? = null,
     onWeightClick: (() -> Unit)? = null,
-    onReminderClick: (() -> Unit)? = null
+    onReminderClick: (() -> Unit)? = null,
+    score: Int = 88
 
 ) {
     // --- START: ViewModel and Database Integration ---
@@ -164,7 +165,8 @@ fun DashboardScreen(
                 )
                 Row(Modifier.fillMaxWidth()) {
                     DailyScoreCard(
-                        score = 88, // This can be replaced later if you store score in the DB
+                        score = score, // This can be replaced later if you store score in the DB
+                        showLabel = true,
                         modifier = Modifier
                             .weight(1f)
                             .height(150.dp)
