@@ -3,6 +3,7 @@ package com.example.bellybuddy.userint.screen
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,10 +20,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.bellybuddy.R
 import com.example.bellybuddy.data.model.BowelMovement
 import com.example.bellybuddy.ui.theme.*
 import com.example.bellybuddy.viewmodel.BowelMovementViewModel
@@ -32,7 +35,7 @@ import java.util.*
 // Data class for Bristol Stool Scale types
 data class BristolType(
     val number: Int,
-    val emoji: String, // Later will replace with custom icons, emojis are placeholders
+    val iconRes: Int,  // Changed from emoji to drawable resource ID
     val description: String
 )
 
@@ -69,10 +72,12 @@ fun BristolTypeButton(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text(
-                text = type.emoji,
-                fontSize = 28.sp
+            Image(
+                painter = painterResource(id = type.iconRes),
+                contentDescription = "Bristol Type ${type.number}",
+                modifier = Modifier.size(36.dp)
             )
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = "Type ${type.number}",
                 fontSize = 11.sp,
@@ -128,7 +133,7 @@ fun ColorCircleButton(
 fun BowelMovementScreen(
     onBack: () -> Unit,
     onSelectBottom: (BottomItem) -> Unit,
-    viewModel: BowelMovementViewModel = viewModel()  // 👈 Add ViewModel
+    viewModel: BowelMovementViewModel = viewModel()
 ) {
     val context = LocalContext.current
     val calendar = Calendar.getInstance()
@@ -159,15 +164,15 @@ fun BowelMovementScreen(
     var selectedSymptoms by remember { mutableStateOf(setOf<String>()) }
     var notes by remember { mutableStateOf("") }
 
-    // Bristol types
+    // Bristol types with custom icons
     val bristolTypes = listOf(
-        BristolType(1, "🟤", "Hard Lumps"),
-        BristolType(2, "🌰", "Lumpy Sausage"),
-        BristolType(3, "🍠", "Cracked Sausage"),
-        BristolType(4, "🌭", "Smooth Sausage"),
-        BristolType(5, "🥔", "Soft Blobs"),
-        BristolType(6, "💧", "Mushy"),
-        BristolType(7, "💦", "Liquid")
+        BristolType(1, R.drawable.bristol_type_1, "Hard Lumps"),
+        BristolType(2, R.drawable.bristol_type_2, "Lumpy Sausage"),
+        BristolType(3, R.drawable.bristol_type_3, "Cracked Sausage"),
+        BristolType(4, R.drawable.bristol_type_4, "Smooth Sausage"),
+        BristolType(5, R.drawable.bristol_type_5, "Soft Blobs"),
+        BristolType(6, R.drawable.bristol_type_6, "Mushy"),
+        BristolType(7, R.drawable.bristol_type_7, "Liquid")
     )
 
     // Date picker dialog
