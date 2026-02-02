@@ -13,6 +13,7 @@ materialIconsExtendedAndroid = "1.7.8"
 navigation = "2.9.5"
 room = "2.8.2"
 ksp = "2.2.20-2.0.4"
+runtime = "1.10.2"
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
@@ -40,3 +41,4 @@ androidx-material = { module = "com.google.android.material:material", version.r
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" } # Optional for coroutines
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+androidx-compose-runtime = { group = "androidx.compose.runtime", name = "runtime", version.ref = "runtime" }

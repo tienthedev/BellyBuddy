@@ -51,6 +51,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.text.style.TextAlign
 import com.example.bellybuddy.data.model.DailyJournal
@@ -215,27 +216,12 @@ fun DashboardScreen(
             DailyJournalSheet(
                 open = journalOpen.value,
                 onClose = { journalOpen.value = false },
-                onSave = { text ->
-                    // Save to database
-                    val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                    val today = dateFormat.format(Date())
-
-                    val entry = DailyJournal(
-                        userId = 1,  // TODO: Get from actual logged-in user
-                        date = today,
-                        mood = "",
-                        notes = text
-                    )
-                    journalViewModel.insertJournalEntry(entry)
-                    journalOpen.value = false
-                },
-                modifier = Modifier.align(Alignment.CenterEnd)
+                journalViewModel = journalViewModel,
+                modifier = Modifier.align(Alignment.Center)
             )
         }
     }
 }
-
-
 @Composable
 fun TodayStatusCards(
     foodItems: List<String> = emptyList(),
@@ -419,77 +405,114 @@ private fun SideDockButton(
 private fun DailyJournalSheet(
     open: Boolean,
     onClose: () -> Unit,
-    onSave: (String) -> Unit,
+    journalViewModel: DailyJournalViewModel,
     modifier: Modifier = Modifier
 ) {
     BackHandler(open) { onClose() }
 
-    // Scrim behind the sheet
-    AnimatedVisibility(
-        visible = open,
-        enter = fadeIn(),
-        exit = fadeOut()
-    ) {
+    val dateFormat = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
+    val today = remember { dateFormat.format(Date()) }
+
+    val todaysEntry by journalViewModel.getJournalEntryByDate(today)
+        .collectAsState(initial = null)
+
+    var text by rememberSaveable { mutableStateOf("") }
+
+    LaunchedEffect(open, todaysEntry?.notes) {
+        if (open) text = todaysEntry?.notes.orEmpty()
+    }
+
+    AnimatedVisibility(visible = open, enter = fadeIn(), exit = fadeOut()) {
         Box(
             Modifier
                 .fillMaxSize()
                 .background(Color.Black.copy(alpha = 0.35f))
-                .clickable { onClose() } // tap outside to close
+                .clickable { onClose() }
         )
     }
 
     AnimatedVisibility(
         visible = open,
         enter = slideInHorizontally(initialOffsetX = { it }) + fadeIn(),
-        exit  = slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
+        exit = slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
     ) {
-        Surface(
-            shape = RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp),
-            tonalElevation = 8.dp,
-            shadowElevation = 8.dp,
-            modifier = modifier
-                .fillMaxHeight()
-                .fillMaxWidth(1f) // sheet width (85% of screen); tweak as you like
-        ) {
-            var text by remember { mutableStateOf("") }
-
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Surface(
+                shape = RoundedCornerShape(24.dp),
+                tonalElevation = 8.dp,
+                shadowElevation = 8.dp,
+                modifier = modifier
+                    .fillMaxWidth(0.9f)
+                    .fillMaxHeight(0.9f)
             ) {
-                Text(
-                    "Daily Journal",
-                    style = MaterialTheme.typography.headlineSmall
-                )
-
-                Spacer(Modifier.height(12.dp))
-
-                OutlinedTextField(
-                    value = text,
-                    onValueChange = { text = it },
+                Column(
                     modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                    placeholder = { Text("What did you eat or do today?") },
-                    minLines = 6
-                )
-
-                Spacer(Modifier.height(12.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        .fillMaxSize()
+                        .padding(16.dp)
                 ) {
-                    Button(
-                        onClick = onClose,
-                        modifier = Modifier.weight(1f)
-                    ) { Text("Cancel") }
+                    Text(
+                        text = "Daily Journal",
+                        style = MaterialTheme.typography.headlineSmall,
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center
+                    )
 
-                    Button(
-                        onClick = { onSave(text) },
-                        modifier = Modifier.weight(1f)
-                    ) { Text("Save") }
+                    Spacer(Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        value = text,
+                        onValueChange = { text = it },
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        placeholder = { Text("What did you eat or do today?") },
+                        minLines = 5
+                    )
+
+                    Spacer(Modifier.height(12.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Button(onClick = onClose, modifier = Modifier.weight(1f)) {
+                            Text("Cancel")
+                        }
+
+                        Button(
+                            onClick = {
+                                val trimmed = text.trim()
+                                if (trimmed.isEmpty()) return@Button
+
+                                val existing = todaysEntry
+                                if (existing != null) {
+                                    // ✅ UPDATE existing
+                                    journalViewModel.updateJournalEntry(
+                                        existing.copy(
+                                            notes = trimmed,
+                                            timeUpdated = System.currentTimeMillis()
+                                        )
+                                    )
+                                } else {
+                                    // ✅ INSERT new
+                                    journalViewModel.insertJournalEntry(
+                                        DailyJournal(
+                                            userId = 1, // will get overwritten by ViewModel anyway
+                                            date = today,
+                                            mood = "",
+                                            notes = trimmed
+                                        )
+                                    )
+                                }
+
+                                onClose()
+                            },
+                            modifier = Modifier.weight(1f),
+                            enabled = text.trim().isNotEmpty()
+                        ) {
+                            Text(if (todaysEntry == null) "Save" else "Save Changes")
+                        }
+                    }
                 }
             }
         }
