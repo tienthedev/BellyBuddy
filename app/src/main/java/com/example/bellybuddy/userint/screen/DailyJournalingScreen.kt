@@ -6,13 +6,18 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -21,11 +26,6 @@ import com.example.bellybuddy.ui.theme.*
 import com.example.bellybuddy.viewmodel.DailyJournalViewModel
 import java.text.SimpleDateFormat
 import java.util.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import com.example.bellybuddy.ui.theme.BellyGreenDark
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,21 +36,23 @@ fun DailyJournalingScreen(
 ) {
     val context = LocalContext.current
     val calendar = Calendar.getInstance()
-    val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-    val displayDateFormat = SimpleDateFormat("MMMM d, yyyy", Locale.getDefault())
+    val dateFormat = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
+    val displayDateFormat = remember { SimpleDateFormat("MMMM d, yyyy", Locale.getDefault()) }
 
     var selectedDate by remember { mutableStateOf(calendar.time) }
     var selectedDateString by remember { mutableStateOf(dateFormat.format(selectedDate)) }
 
-    // Get journal entry for selected date
+    var editingEntry by remember { mutableStateOf<DailyJournal?>(null) }
+    var editNotes by remember { mutableStateOf("") }
+
+    var deleteEntry by remember { mutableStateOf<DailyJournal?>(null) }
+
     val journalEntry by viewModel.getJournalEntryByDate(selectedDateString)
         .collectAsState(initial = null)
 
-    // Get all journal entries for the list
     val allJournalEntries by viewModel.getAllJournalEntries()
         .collectAsState(initial = emptyList())
 
-    // Date picker dialog
     val datePickerDialog = DatePickerDialog(
         context,
         { _, year, month, day ->
@@ -63,23 +65,103 @@ fun DailyJournalingScreen(
         calendar.get(Calendar.DAY_OF_MONTH)
     )
 
+    if (editingEntry != null) {
+        AlertDialog(
+            onDismissRequest = { editingEntry = null },
+            title = {
+                Text(
+                    text = "Edit Journal Entry",
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
+            },
+            text = {
+                OutlinedTextField(
+                    value = editNotes,
+                    onValueChange = { editNotes = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 5,
+                    label = { Text("Notes") },
+                    shape = RoundedCornerShape(12.dp)
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val original = editingEntry!!
+                        viewModel.updateJournalEntry(
+                            original.copy(
+                                notes = editNotes.trim(),
+                                timeUpdated = System.currentTimeMillis()
+                            )
+                        )
+                        editingEntry = null
+                    },
+                    enabled = editNotes.trim().isNotEmpty(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = BellyGreenDark,
+                        contentColor = Color.White
+                    )
+                ) { Text("Save Changes") }
+            },
+            dismissButton = {
+                TextButton(onClick = { editingEntry = null }) { Text("Cancel") }
+            }
+        )
+    }
+
+    if (deleteEntry != null) {
+        AlertDialog(
+            onDismissRequest = { deleteEntry = null },
+            title = {
+                Text(
+                    text = "Delete Entry?",
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
+            },
+            text = {
+                Text(
+                    text = "Are you sure you want to delete this journal entry? This can’t be undone.",
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val entryToDelete = deleteEntry!!
+                        viewModel.deleteJournalEntry(entryToDelete)
+                        deleteEntry = null
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Red,
+                        contentColor = Color.White
+                    )
+                ) { Text("Delete") }
+            },
+            dismissButton = {
+                TextButton(onClick = { deleteEntry = null }) { Text("Cancel") }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
-            TopAppBar(
+            CenterAlignedTopAppBar(
                 title = {
                     Text(
                         "Daily Journal",
-                        style = MaterialTheme.typography.headlineSmall.copy(
-                            fontWeight = FontWeight.Bold
-                        )
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold
                     )
                 },
                 navigationIcon = {
                     TextButton(
                         onClick = onBack,
-                        colors = ButtonDefaults.textButtonColors(
-                            contentColor = BellyGreenDark
-                        )
+                        colors = ButtonDefaults.textButtonColors(contentColor = BellyGreenDark)
                     ) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
@@ -108,7 +190,6 @@ fun DailyJournalingScreen(
                 .padding(padding)
                 .padding(16.dp)
         ) {
-            // Date Selector
             OutlinedButton(
                 onClick = { datePickerDialog.show() },
                 modifier = Modifier
@@ -130,17 +211,20 @@ fun DailyJournalingScreen(
             HorizontalDivider(thickness = 1.dp, color = LightGray)
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Entry for Selected Date
             if (journalEntry != null) {
                 Text(
-                    "Entry for ${displayDateFormat.format(selectedDate)}",
+                    "Today's Entry",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     modifier = Modifier.padding(bottom = 12.dp)
                 )
 
                 JournalEntryCard(
                     entry = journalEntry!!,
-                    onDelete = { viewModel.deleteJournalEntry(journalEntry!!) },
+                    onDelete = { deleteEntry = journalEntry!! },
+                    onEdit = { entry ->
+                        editingEntry = entry
+                        editNotes = entry.notes
+                    },
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
             } else {
@@ -169,7 +253,6 @@ fun DailyJournalingScreen(
             HorizontalDivider(thickness = 1.dp, color = LightGray)
             Spacer(modifier = Modifier.height(16.dp))
 
-            // All Entries List
             Text(
                 "All Journal Entries",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -188,13 +271,15 @@ fun DailyJournalingScreen(
                     )
                 }
             } else {
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     items(allJournalEntries) { entry ->
                         JournalEntryCard(
                             entry = entry,
-                            onDelete = { viewModel.deleteJournalEntry(entry) }
+                            onDelete = { deleteEntry = entry },
+                            onEdit = { e ->
+                                editingEntry = e
+                                editNotes = e.notes
+                            }
                         )
                     }
                 }
@@ -207,11 +292,12 @@ fun DailyJournalingScreen(
 fun JournalEntryCard(
     entry: DailyJournal,
     onDelete: () -> Unit,
+    onEdit: (DailyJournal) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val displayDateFormat = SimpleDateFormat("MMMM d, yyyy", Locale.getDefault())
-    val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-    val entryDate = dateFormat.parse(entry.date)
+    val displayDateFormat = remember { SimpleDateFormat("MMMM d, yyyy", Locale.getDefault()) }
+    val dateFormat = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
+    val entryDate = remember(entry.date) { dateFormat.parse(entry.date) }
 
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -245,12 +331,22 @@ fun JournalEntryCard(
                     )
                 }
 
-                IconButton(onClick = onDelete) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Delete entry",
-                        tint = Color.Red
-                    )
+                Row(verticalAlignment = Alignment.Top) {
+                    IconButton(onClick = { onEdit(entry) }) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Edit entry",
+                            tint = BellyGreenDark
+                        )
+                    }
+
+                    IconButton(onClick = onDelete) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete entry",
+                            tint = Color.Black
+                        )
+                    }
                 }
             }
         }
