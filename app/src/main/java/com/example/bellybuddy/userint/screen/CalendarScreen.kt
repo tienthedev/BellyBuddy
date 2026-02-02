@@ -28,21 +28,11 @@ import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.foundation.BorderStroke
 import com.example.bellybuddy.userint.component.DailyScoreCard
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.bellybuddy.viewmodel.DailyJournalViewModel
-import com.example.bellybuddy.viewmodel.FoodLogViewModel
-import com.example.bellybuddy.viewmodel.SymptomViewModel
-import com.example.bellybuddy.viewmodel.BowelMovementViewModel
-import java.text.SimpleDateFormat
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalendarScreen(
-    onSelectBottom: (BottomItem) -> Unit,
-    journalViewModel: DailyJournalViewModel = viewModel(),
-    foodViewModel: FoodLogViewModel = viewModel(),
-    symptomViewModel: SymptomViewModel = viewModel(),
-    bowelViewModel: BowelMovementViewModel = viewModel()
+    onSelectBottom: (BottomItem) -> Unit
 ) {
     var selectedDay by remember {
         mutableStateOf(
@@ -51,30 +41,6 @@ fun CalendarScreen(
     }
     val currentMonth = remember { mutableStateOf(Calendar.getInstance().get(Calendar.MONTH)) }
     val currentYear = remember { mutableStateOf(Calendar.getInstance().get(Calendar.YEAR)) }
-
-    // Format the selected date to match database format (yyyy-MM-dd)
-    val selectedDateString = remember(selectedDay, currentMonth.value, currentYear.value) {
-        val calendar = Calendar.getInstance()
-        calendar.set(currentYear.value, currentMonth.value, selectedDay)
-        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-        dateFormat.format(calendar.time)
-    }
-
-    // Get journal entry for the selected date
-    val journalEntry by journalViewModel.getJournalEntryByDate(selectedDateString)
-        .collectAsState(initial = null)
-
-    // Get food logs for the selected date
-    val foodLogs by foodViewModel.getFoodLogsByDate(selectedDateString)
-        .collectAsState(initial = emptyList())
-
-    // Get symptoms for the selected date
-    val symptoms by symptomViewModel.getSymptomsByDate(selectedDateString)
-        .collectAsState(initial = emptyList())
-
-    // Get bowel movements for the selected date
-    val bowelMovements by bowelViewModel.getBowelMovementsByDate(selectedDateString)
-        .collectAsState(initial = emptyList())
 
     Scaffold(
         topBar = {
@@ -161,11 +127,7 @@ fun CalendarScreen(
                     day = selectedDay,
                     month = currentMonth.value,
                     year = currentYear.value,
-                    healthData = if (isFutureDate) null else generateSampleHealthData(currentMonth.value, currentYear.value)[selectedDay],
-                    journalEntry = journalEntry,
-                    foodLogs = foodLogs,
-                    symptoms = symptoms,
-                    bowelMovements = bowelMovements
+                    healthData = if (isFutureDate) null else generateSampleHealthData(currentMonth.value, currentYear.value)[selectedDay]
                 )
             }
 
@@ -392,11 +354,7 @@ private fun SelectedDateInfo(
     day: Int,
     month: Int,
     year: Int,
-    healthData: HealthDayData?,
-    journalEntry: com.example.bellybuddy.data.model.DailyJournal?,
-    foodLogs: List<com.example.bellybuddy.data.model.FoodLog>,
-    symptoms: List<com.example.bellybuddy.data.model.Symptom>,
-    bowelMovements: List<com.example.bellybuddy.data.model.BowelMovement>
+    healthData: HealthDayData?
 ) {
     val monthNames = listOf(
         "January", "February", "March", "April", "May", "June",
@@ -484,272 +442,75 @@ private fun SelectedDateInfo(
                         ) {
                             when (selectedTab) {
                                 DayInfoTab.Food -> {
-                                    // Display real food data from database
-                                    if (foodLogs.isEmpty()) {
+                                    if (data.food.isEmpty()) {
                                         Text(
                                             text = "No food recorded for this day.",
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                                         )
                                     } else {
-                                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                            // Group food logs by meal type
-                                            val groupedFoods = foodLogs.groupBy { it.mealType }
-
-                                            // Display meals in order
-                                            listOf("BREAKFAST", "LUNCH", "DINNER", "SNACK").forEach { mealType ->
-                                                groupedFoods[mealType]?.let { foods ->
-                                                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                                        Text(
-                                                            text = mealType.lowercase().replaceFirstChar { it.uppercase() },
-                                                            style = MaterialTheme.typography.titleSmall.copy(
-                                                                fontWeight = FontWeight.Bold
-                                                            ),
-                                                            color = BellyGreenDark
-                                                        )
-                                                        foods.forEach { food ->
-                                                            Row(
-                                                                modifier = Modifier.fillMaxWidth(),
-                                                                horizontalArrangement = Arrangement.SpaceBetween
-                                                            ) {
-                                                                Text(
-                                                                    text = "• ${food.foodName}",
-                                                                    style = MaterialTheme.typography.bodyMedium,
-                                                                    modifier = Modifier.weight(1f)
-                                                                )
-                                                                Text(
-                                                                    text = food.portionSize,
-                                                                    style = MaterialTheme.typography.bodySmall,
-                                                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                                                                )
-                                                            }
-                                                        }
-                                                    }
-                                                }
+                                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            data.food.forEach { foodItem ->
+                                                Text(
+                                                    text = "• $foodItem",
+                                                    style = MaterialTheme.typography.bodyMedium
+                                                )
                                             }
                                         }
                                     }
                                 }
                                 DayInfoTab.Symptoms -> {
-                                    // Display real symptoms data from database
-                                    if (symptoms.isEmpty()) {
+                                    if (data.symptoms.isEmpty()) {
                                         Text(
                                             text = "No symptoms recorded for this day.",
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                                         )
                                     } else {
-                                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                            symptoms.forEach { symptom ->
-                                                Row(
-                                                    modifier = Modifier.fillMaxWidth(),
-                                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                                    verticalAlignment = Alignment.CenterVertically
-                                                ) {
-                                                    Text(
-                                                        text = "• ${symptom.symptomType}",
-                                                        style = MaterialTheme.typography.bodyMedium,
-                                                        modifier = Modifier.weight(1f)
-                                                    )
-                                                    Surface(
-                                                        shape = RoundedCornerShape(8.dp),
-                                                        color = when {
-                                                            symptom.intensity >= 8 -> ErrorRed.copy(alpha = 0.2f)
-                                                            symptom.intensity >= 5 -> WarningYellow.copy(alpha = 0.2f)
-                                                            else -> SuccessGreen.copy(alpha = 0.2f)
-                                                        }
-                                                    ) {
-                                                        Text(
-                                                            text = "${symptom.intensity}/10",
-                                                            style = MaterialTheme.typography.bodySmall.copy(
-                                                                fontWeight = FontWeight.Bold
-                                                            ),
-                                                            color = when {
-                                                                symptom.intensity >= 8 -> ErrorRed
-                                                                symptom.intensity >= 5 -> WarningYellow.copy(alpha = 0.8f)
-                                                                else -> SuccessGreen
-                                                            },
-                                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                                        )
-                                                    }
-                                                }
+                                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            data.symptoms.forEach { symptom ->
+                                                Text(
+                                                    text = "• $symptom",
+                                                    style = MaterialTheme.typography.bodyMedium
+                                                )
                                             }
                                         }
                                     }
                                 }
                                 DayInfoTab.Bowel -> {
-                                    // Display real bowel movement data from database
-                                    if (bowelMovements.isEmpty()) {
+                                    if (data.bowel.isEmpty()) {
                                         Text(
                                             text = "No bowel movements recorded for this day.",
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                                         )
                                     } else {
-                                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                            bowelMovements.forEach { bm ->
-                                                Column(
-                                                    modifier = Modifier
-                                                        .fillMaxWidth()
-                                                        .background(
-                                                            color = BellyGreenLight.copy(alpha = 0.1f),
-                                                            shape = RoundedCornerShape(8.dp)
-                                                        )
-                                                        .padding(12.dp),
-                                                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                                                ) {
-                                                    // Time and main info
-                                                    Row(
-                                                        modifier = Modifier.fillMaxWidth(),
-                                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                                        verticalAlignment = Alignment.CenterVertically
-                                                    ) {
-                                                        Text(
-                                                            text = formatBowelTime(bm.time),
-                                                            style = MaterialTheme.typography.titleSmall.copy(
-                                                                fontWeight = FontWeight.Bold
-                                                            ),
-                                                            color = BellyGreenDark
-                                                        )
-                                                        Text(
-                                                            text = "${bm.consistency}",
-                                                            style = MaterialTheme.typography.bodySmall,
-                                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                                                        )
-                                                    }
-
-                                                    // Color
-                                                    Text(
-                                                        text = "Color: ${bm.color}",
-                                                        style = MaterialTheme.typography.bodyMedium
-                                                    )
-
-                                                    // Pain and Urgency levels
-                                                    Row(
-                                                        modifier = Modifier.fillMaxWidth(),
-                                                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                                                    ) {
-                                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                                            Text(
-                                                                text = "Pain: ",
-                                                                style = MaterialTheme.typography.bodySmall,
-                                                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                                                            )
-                                                            Surface(
-                                                                shape = RoundedCornerShape(4.dp),
-                                                                color = when {
-                                                                    bm.painLevel >= 7 -> ErrorRed.copy(alpha = 0.2f)
-                                                                    bm.painLevel >= 4 -> WarningYellow.copy(alpha = 0.2f)
-                                                                    else -> SuccessGreen.copy(alpha = 0.2f)
-                                                                }
-                                                            ) {
-                                                                Text(
-                                                                    text = "${bm.painLevel}/10",
-                                                                    style = MaterialTheme.typography.bodySmall.copy(
-                                                                        fontWeight = FontWeight.Bold
-                                                                    ),
-                                                                    color = when {
-                                                                        bm.painLevel >= 7 -> ErrorRed
-                                                                        bm.painLevel >= 4 -> WarningYellow.copy(alpha = 0.8f)
-                                                                        else -> SuccessGreen
-                                                                    },
-                                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                                                )
-                                                            }
-                                                        }
-
-                                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                                            Text(
-                                                                text = "Urgency: ",
-                                                                style = MaterialTheme.typography.bodySmall,
-                                                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                                                            )
-                                                            Surface(
-                                                                shape = RoundedCornerShape(4.dp),
-                                                                color = when {
-                                                                    bm.urgencyLevel >= 7 -> ErrorRed.copy(alpha = 0.2f)
-                                                                    bm.urgencyLevel >= 4 -> WarningYellow.copy(alpha = 0.2f)
-                                                                    else -> SuccessGreen.copy(alpha = 0.2f)
-                                                                }
-                                                            ) {
-                                                                Text(
-                                                                    text = "${bm.urgencyLevel}/10",
-                                                                    style = MaterialTheme.typography.bodySmall.copy(
-                                                                        fontWeight = FontWeight.Bold
-                                                                    ),
-                                                                    color = when {
-                                                                        bm.urgencyLevel >= 7 -> ErrorRed
-                                                                        bm.urgencyLevel >= 4 -> WarningYellow.copy(alpha = 0.8f)
-                                                                        else -> SuccessGreen
-                                                                    },
-                                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                                                )
-                                                            }
-                                                        }
-                                                    }
-
-                                                    // Blood and Mucus indicators
-                                                    if (bm.blood || bm.mucus) {
-                                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                                            if (bm.blood) {
-                                                                Surface(
-                                                                    shape = RoundedCornerShape(4.dp),
-                                                                    color = ErrorRed.copy(alpha = 0.15f)
-                                                                ) {
-                                                                    Text(
-                                                                        text = "🔴 Blood",
-                                                                        style = MaterialTheme.typography.bodySmall,
-                                                                        color = ErrorRed,
-                                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                                                    )
-                                                                }
-                                                            }
-                                                            if (bm.mucus) {
-                                                                Surface(
-                                                                    shape = RoundedCornerShape(4.dp),
-                                                                    color = WarningYellow.copy(alpha = 0.15f)
-                                                                ) {
-                                                                    Text(
-                                                                        text = "💧 Mucus",
-                                                                        style = MaterialTheme.typography.bodySmall,
-                                                                        color = WarningYellow.copy(alpha = 0.9f),
-                                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                                                    )
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-
-                                                    // Notes if present
-                                                    if (bm.notes.isNotEmpty()) {
-                                                        Text(
-                                                            text = "Note: ${bm.notes}",
-                                                            style = MaterialTheme.typography.bodySmall,
-                                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                                            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
-                                                        )
-                                                    }
-                                                }
+                                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            data.bowel.forEach { bowel ->
+                                                Text(
+                                                    text = "• $bowel",
+                                                    style = MaterialTheme.typography.bodyMedium
+                                                )
                                             }
                                         }
                                     }
                                 }
                                 DayInfoTab.Journal -> {
-                                    // Display real journal data from database
-                                    if (journalEntry != null) {
-                                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            Text(
-                                                text = journalEntry.notes,
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                lineHeight = MaterialTheme.typography.bodyMedium.lineHeight
-                                            )
-                                        }
-                                    } else {
+                                    if (data.journal.isEmpty()) {
                                         Text(
                                             text = "No journal notes recorded for this day.",
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                                         )
+                                    } else {
+                                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            data.journal.forEach { journal ->
+                                                Text(
+                                                    text = "• $journal",
+                                                    style = MaterialTheme.typography.bodyMedium
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -901,16 +662,4 @@ private fun generateSampleHealthData(month: Int, year: Int): Map<Int, HealthDayD
         )
     }
     return data
-}
-
-// Helper function to format bowel movement time
-private fun formatBowelTime(time: String): String {
-    return try {
-        val inputFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
-        val outputFormat = SimpleDateFormat("h:mm a", Locale.getDefault())
-        val date = inputFormat.parse(time)
-        outputFormat.format(date ?: Date())
-    } catch (e: Exception) {
-        time
-    }
 }
