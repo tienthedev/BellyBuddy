@@ -90,12 +90,8 @@ dependencies {
     implementation(libs.androidx.room.ktx) // Optional for coroutines
     ksp(libs.androidx.room.compiler)
 
-
 }
 
 ksp {
     arg("room.generateKotlin", "true")
 }
-
-
-
