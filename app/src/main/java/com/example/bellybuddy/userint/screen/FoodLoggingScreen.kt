@@ -80,12 +80,6 @@ fun FoodLoggingScreen(
                 )
             )
         },
-        bottomBar = {
-            BottomToolBar(
-                selected = BottomItem.Grid,
-                onSelect = onSelectBottom
-            )
-        },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { showAddSheet = true },

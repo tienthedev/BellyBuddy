@@ -18,15 +18,16 @@ import com.example.bellybuddy.userint.component.DailyScoreCard
 fun DailyScoreScreen(
     onBottomSelect: (BottomItem) -> Unit,
     onBack: () -> Unit = {},
-    score: Int = 88
+    score: Int
 ) {
     val (label, labelColor) = scoreLabel(score)
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        "Daily Score",
+                        text = "Daily Score",
                         color = Color.Black,
                         fontWeight = FontWeight.Bold
                     )
@@ -41,7 +42,7 @@ fun DailyScoreScreen(
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.onSurface
+                            tint = BellyGreenDark
                         )
                     }
                 },
@@ -66,24 +67,23 @@ fun DailyScoreScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box(
-                modifier = Modifier
-                    .fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
                 DailyScoreCard(
                     score = score,
                     showLabel = false,
-                    modifier = Modifier
-                        .width(220.dp)
+                    modifier = Modifier.width(220.dp)
                 )
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             Text(
                 text = label,
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
+                color = labelColor
             )
         }
     }

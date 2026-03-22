@@ -12,6 +12,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 @Composable
 fun DailyScoreCard(
@@ -31,9 +33,10 @@ fun DailyScoreCard(
         modifier = modifier.then(
             if (onClick != null) Modifier.clickable { onClick() } else Modifier
         ),
-        shape = MaterialTheme.shapes.medium,
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF3F4F6))
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = BorderStroke(1.dp, Color(0xFFE6E6E6))
     ) {
         Column(
             modifier = Modifier
@@ -46,7 +49,7 @@ fun DailyScoreCard(
                 modifier = Modifier
                     .size(ringSize)
                     .background(
-                        Color.LightGray.copy(alpha = 0.3f),
+                        Color.LightGray.copy(alpha = 0.2f),
                         CircleShape
                     ),
                 contentAlignment = Alignment.Center
@@ -54,11 +57,12 @@ fun DailyScoreCard(
                 CircularProgressIndicator(
                     progress = score / 100f,
                     color = scoreColor,
-                    strokeWidth = ringSize / 12,   // scales nicely
+                    strokeWidth = ringSize / 12,
                     modifier = Modifier.size(ringSize * 0.8f)
                 )
+
                 Text(
-                    "$score",
+                    text = "$score",
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold,
                     color = scoreColor

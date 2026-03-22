@@ -67,10 +67,13 @@ fun DailyJournalingScreen(
 
     if (editingEntry != null) {
         AlertDialog(
-            onDismissRequest = { editingEntry = null },
+            onDismissRequest = {
+                editingEntry = null
+                editNotes = ""
+            },
             title = {
                 Text(
-                    text = "Edit Journal Entry",
+                    text = "Add to Journal Entry",
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.fillMaxWidth(),
                     textAlign = TextAlign.Center
@@ -82,31 +85,52 @@ fun DailyJournalingScreen(
                     onValueChange = { editNotes = it },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 5,
-                    label = { Text("Notes") },
+                    label = { Text("Add more notes") },
                     shape = RoundedCornerShape(12.dp)
                 )
             },
             confirmButton = {
                 Button(
                     onClick = {
-                        val original = editingEntry!!
-                        viewModel.updateJournalEntry(
-                            original.copy(
-                                notes = editNotes.trim(),
-                                timeUpdated = System.currentTimeMillis()
+                        val original = editingEntry ?: return@Button
+                        val newText = editNotes.trim()
+
+                        if (newText.isNotEmpty()) {
+                            val combinedNotes = if (original.notes.isBlank()) {
+                                newText
+                            } else {
+                                original.notes + "\n\n" + newText
+                            }
+
+                            viewModel.updateJournalEntry(
+                                original.copy(
+                                    notes = combinedNotes,
+                                    timeUpdated = System.currentTimeMillis()
+                                )
                             )
-                        )
+                        }
+
                         editingEntry = null
+                        editNotes = ""
                     },
                     enabled = editNotes.trim().isNotEmpty(),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = BellyGreenDark,
                         contentColor = Color.White
                     )
-                ) { Text("Save Changes") }
+                ) {
+                    Text("Add Entry")
+                }
             },
             dismissButton = {
-                TextButton(onClick = { editingEntry = null }) { Text("Cancel") }
+                TextButton(
+                    onClick = {
+                        editingEntry = null
+                        editNotes = ""
+                    }
+                ) {
+                    Text("Cancel")
+                }
             }
         )
     }
@@ -132,7 +156,7 @@ fun DailyJournalingScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        val entryToDelete = deleteEntry!!
+                        val entryToDelete = deleteEntry ?: return@Button
                         viewModel.deleteJournalEntry(entryToDelete)
                         deleteEntry = null
                     },
@@ -140,10 +164,14 @@ fun DailyJournalingScreen(
                         containerColor = Color.Red,
                         contentColor = Color.White
                     )
-                ) { Text("Delete") }
+                ) {
+                    Text("Delete")
+                }
             },
             dismissButton = {
-                TextButton(onClick = { deleteEntry = null }) { Text("Cancel") }
+                TextButton(onClick = { deleteEntry = null }) {
+                    Text("Cancel")
+                }
             }
         )
     }
@@ -223,7 +251,7 @@ fun DailyJournalingScreen(
                     onDelete = { deleteEntry = journalEntry!! },
                     onEdit = { entry ->
                         editingEntry = entry
-                        editNotes = entry.notes
+                        editNotes = ""
                     },
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
@@ -278,7 +306,7 @@ fun DailyJournalingScreen(
                             onDelete = { deleteEntry = entry },
                             onEdit = { e ->
                                 editingEntry = e
-                                editNotes = e.notes
+                                editNotes = ""
                             }
                         )
                     }

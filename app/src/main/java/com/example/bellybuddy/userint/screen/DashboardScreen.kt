@@ -2,95 +2,64 @@ package com.example.bellybuddy.userint.screen
 
 import android.app.Application
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.graphics.lerp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.bellybuddy.R
-import java.util.Calendar
-import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.graphics.painter.Painter
+import com.example.bellybuddy.data.model.DailyJournal
 import com.example.bellybuddy.ui.theme.BellyGreen
 import com.example.bellybuddy.userint.component.DailyScoreCard
-import com.example.bellybuddy.userint.component.WeightCard
 import com.example.bellybuddy.userint.component.ReminderCard
-import androidx.compose.runtime.collectAsState
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.draw.clip
-import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.runtime.LaunchedEffect
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.compose.ui.text.style.TextAlign
-import com.example.bellybuddy.data.model.DailyJournal
+import com.example.bellybuddy.userint.component.WeightCard
 import com.example.bellybuddy.viewmodel.DailyJournalViewModel
 import com.example.bellybuddy.viewmodel.UserViewModel
 import com.example.bellybuddy.viewmodel.UserViewModelFactory
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     onProfileClick: (() -> Unit)? = null,
     onBottomSelect: (BottomItem) -> Unit,
-    onLogout: (() -> Unit)? = null, // optional for later use
+    onLogout: (() -> Unit)? = null,
     onDailyScoreClick: (() -> Unit)? = null,
     onWeightClick: (() -> Unit)? = null,
     onReminderClick: (() -> Unit)? = null,
     score: Int = 88
-
 ) {
-    // --- START: ViewModel and Database Integration ---
-
-    // Get the application context to create the ViewModel
     val application = LocalContext.current.applicationContext as Application
 
-    // Instantiate the ViewModel using our factory
     val userViewModel: UserViewModel = viewModel(
         factory = UserViewModelFactory(application)
     )
 
     val journalViewModel: DailyJournalViewModel = viewModel()
-
-    // Observe the loggedInUser StateFlow. The UI will automatically recompose when this changes.
     val loggedInUser by userViewModel.loggedInUser.collectAsState()
 
-    // --- END: ViewModel and Database Integration ---
     val calendar = Calendar.getInstance()
     val hour = calendar.get(Calendar.HOUR_OF_DAY)
     val greeting = when (hour) {
@@ -99,8 +68,9 @@ fun DashboardScreen(
         else -> "Good Evening"
     }
 
-    val brand = Color(0xFF9DDB9E) // light green accent
-    val journalOpen = rememberSaveable { mutableStateOf(false) }
+    val dateFormat = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
+    val today = remember { dateFormat.format(Date()) }
+    val todaysEntry by journalViewModel.getJournalEntryByDate(today).collectAsState(initial = null)
 
     Scaffold(
         topBar = {
@@ -122,12 +92,13 @@ fun DashboardScreen(
                         modifier = Modifier
                             .padding(end = 12.dp)
                             .size(50.dp)
-                            .clickable { onProfileClick?.invoke() }
                     ) {
                         Image(
                             painter = painterResource(id = R.drawable.profile_photo),
                             contentDescription = "Profile",
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(CircleShape)
                         )
                     }
                 }
@@ -140,88 +111,180 @@ fun DashboardScreen(
             )
         }
     ) { padding ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp)
+                .padding(bottom = 16.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp)
-            ) {
-                Spacer(Modifier.height(3.dp))
-                Text(
-                    text = "$greeting, Robie",
-                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
-                Spacer(Modifier.height(3.dp))
-                Text(
-                    text = "Today's Status",
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold
-                    ),
-                    modifier = Modifier.padding(bottom = 12.dp)
-                )
-                Row(Modifier.fillMaxWidth()) {
-                    DailyScoreCard(
-                        score = score, // This can be replaced later if you store score in the DB
-                        showLabel = true,
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(150.dp)
-                            .padding(end = 8.dp),
-                        onClick = { onDailyScoreClick?.invoke() }
-                    )
-                    WeightCard(
-                        title = "Weight",
-                        // Use the user's weight from the database.
-                        // The `?:` operator provides a default value if weight is null.
-                        value = "${loggedInUser?.weight ?: "--"} lbs",
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(150.dp)
-                            .padding(start = 8.dp),
-                        onClick = { onWeightClick?.invoke() }
-                    )
-                }
-                Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(3.dp))
 
-                ReminderCard(
-                    title = "Reminder",
-                    message = "Did you take your supplements?",
+            Text(
+                text = "$greeting, Robie",
+                style = MaterialTheme.typography.headlineMedium.copy(
+                    fontWeight = FontWeight.Bold
+                ),
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+
+            Spacer(Modifier.height(3.dp))
+
+            Text(
+                text = "Today's Status",
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.Bold
+                ),
+                modifier = Modifier.padding(bottom = 12.dp)
+            )
+
+            Row(Modifier.fillMaxWidth()) {
+                DailyScoreCard(
+                    score = score,
+                    showLabel = true,
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .height(150.dp),
-                    onClick = { onReminderClick?.invoke() }
+                        .weight(1f)
+                        .height(150.dp)
+                        .padding(end = 8.dp),
+                    onClick = { onDailyScoreClick?.invoke() }
                 )
-                Spacer(Modifier.height(16.dp))
 
-                TodayStatusCards(
-                    foodItems = listOf("Oatmeal", "Grilled Chicken", "Salad"), // Replace with actual data
-                    symptoms = listOf("Bloating", "Headache"), // Replace with actual data
-                    bowelMovements = listOf("Morning - Normal"), // Replace with actual data
-                    modifier = Modifier.fillMaxWidth()
+                WeightCard(
+                    title = "Weight",
+                    value = "${loggedInUser?.weight ?: "--"} lbs",
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(150.dp)
+                        .padding(start = 8.dp),
+                    onClick = { onWeightClick?.invoke() }
                 )
             }
 
-            SideDockButton(
-                onClick = { journalOpen.value = true },
+            Spacer(Modifier.height(16.dp))
+
+            ReminderCard(
+                title = "Reminder",
+                message = "Did you take your supplements?",
                 modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .offset(x = 8.dp)
+                    .fillMaxWidth()
+                    .height(150.dp),
+                onClick = { onReminderClick?.invoke() }
             )
 
-            DailyJournalSheet(
-                open = journalOpen.value,
-                onClose = { journalOpen.value = false },
-                journalViewModel = journalViewModel,
-                modifier = Modifier.align(Alignment.Center)
+            Spacer(Modifier.height(16.dp))
+
+            DailyJournalCard(
+                todayKey = today,
+                initialText = todaysEntry?.notes.orEmpty(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(230.dp),
+                onSave = { text ->
+                    val trimmed = text.trim()
+                    if (trimmed.isEmpty()) return@DailyJournalCard
+
+                    val existing = todaysEntry
+                    if (existing != null) {
+                        journalViewModel.updateJournalEntry(
+                            existing.copy(
+                                notes = trimmed,
+                                timeUpdated = System.currentTimeMillis()
+                            )
+                        )
+                    } else {
+                        journalViewModel.insertJournalEntry(
+                            DailyJournal(
+                                userId = 1,
+                                date = today,
+                                mood = "",
+                                notes = trimmed
+                            )
+                        )
+                    }
+                }
+            )
+
+            Spacer(Modifier.height(16.dp))
+
+            TodayStatusCards(
+                foodItems = listOf("Oatmeal", "Grilled Chicken", "Salad"),
+                symptoms = listOf("Bloating", "Headache"),
+                bowelMovements = listOf("Morning - Normal"),
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }
 }
+
+@Composable
+private fun DailyJournalCard(
+    todayKey: String,
+    initialText: String,
+    modifier: Modifier = Modifier,
+    onSave: (String) -> Unit
+) {
+    var journalText by rememberSaveable(todayKey) { mutableStateOf(initialText) }
+
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            Text(
+                text = "Daily Journal",
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.Bold
+                )
+            )
+
+            Spacer(Modifier.height(10.dp))
+
+            OutlinedTextField(
+                value = journalText,
+                onValueChange = { journalText = it },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                placeholder = {
+                    Text("Write about your day...")
+                },
+                shape = RoundedCornerShape(18.dp),
+                singleLine = false,
+                maxLines = 8,
+                keyboardOptions = KeyboardOptions(
+                    imeAction = ImeAction.Done
+                )
+            )
+
+            Spacer(Modifier.height(12.dp))
+
+            Button(
+                onClick = {
+                    val trimmed = journalText.trim()
+                    if (trimmed.isNotEmpty()) {
+                        onSave(trimmed)
+                    }
+                },
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = BellyGreen,
+                    contentColor = Color.White
+                ),
+                modifier = Modifier.align(Alignment.End)
+            ) {
+                Text("Save Journal")
+            }
+        }
+    }
+}
+
 @Composable
 fun TodayStatusCards(
     foodItems: List<String> = emptyList(),
@@ -231,17 +294,14 @@ fun TodayStatusCards(
 ) {
     val pagerState = rememberPagerState(pageCount = { 3 })
 
-    Column(
-        modifier = modifier
-    ) {
-        // Swipeable cards
+    Column(modifier = modifier) {
         HorizontalPager(
             state = pagerState,
-            contentPadding = PaddingValues(horizontal = 32.dp),
-            pageSpacing = 16.dp,
+            contentPadding = PaddingValues(0.dp),
+            pageSpacing = 0.dp,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(180.dp)
+                .height(150.dp)
         ) { page ->
             when (page) {
                 0 -> StatusCard(
@@ -249,53 +309,47 @@ fun TodayStatusCards(
                     iconRes = R.drawable.ic_food,
                     items = foodItems,
                     emptyMessage = "No food logged today",
-                    backgroundColor = BellyGreen.copy(alpha = 0.15f),
-                    borderColor = BellyGreen
+                    accentColor = BellyGreen
                 )
+
                 1 -> StatusCard(
                     title = "Symptoms",
                     iconRes = R.drawable.ic_symptoms,
                     items = symptoms,
                     emptyMessage = "No symptoms recorded",
-                    backgroundColor = Color(0xFFFFE0B2).copy(alpha = 0.3f),
-                    borderColor = Color(0xFFFFA726)
+                    accentColor = Color(0xFFFFA726)
                 )
+
                 2 -> StatusCard(
                     title = "Bowel Movement",
                     iconRes = R.drawable.ic_toilet,
                     items = bowelMovements,
                     emptyMessage = "No bowel movements logged",
-                    backgroundColor = Color(0xFFE1BEE7).copy(alpha = 0.3f),
-                    borderColor = Color(0xFFAB47BC)
+                    accentColor = Color(0xFFAB47BC)
                 )
             }
         }
 
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(10.dp))
 
-        // Page indicators
         Row(
-            Modifier
+            modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 8.dp),
+                .padding(vertical = 6.dp),
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
             repeat(3) { index ->
                 Box(
                     modifier = Modifier
-                        .size(if (pagerState.currentPage == index) 24.dp else 8.dp)
+                        .size(if (pagerState.currentPage == index) 18.dp else 8.dp)
                         .clip(CircleShape)
                         .background(
-                            if (pagerState.currentPage == index)
-                                BellyGreen
-                            else
-                                BellyGreen.copy(alpha = 0.3f)
+                            if (pagerState.currentPage == index) BellyGreen
+                            else BellyGreen.copy(alpha = 0.25f)
                         )
                 )
-                if (index < 2) {
-                    Spacer(Modifier.width(8.dp))
-                }
+                if (index < 2) Spacer(Modifier.width(8.dp))
             }
         }
     }
@@ -307,68 +361,86 @@ private fun StatusCard(
     iconRes: Int? = null,
     items: List<String>,
     emptyMessage: String,
-    backgroundColor: Color,
-    modifier: Modifier = Modifier,
-    borderColor: Color? = null
+    accentColor: Color,
+    modifier: Modifier = Modifier
 ) {
-    val respectedColor = borderColor ?: lerp(backgroundColor, Color.Black, 0.25f)
-
-    OutlinedCard(
-        modifier = modifier.fillMaxSize(),
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .fillMaxHeight(),
         shape = RoundedCornerShape(24.dp),
-        border = BorderStroke(2.dp, respectedColor),
-        colors = CardDefaults.outlinedCardColors(containerColor = backgroundColor)
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 4.dp
+        )
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(20.dp)
+                .padding(14.dp)
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(CircleShape)
+                        .background(accentColor.copy(alpha = 0.14f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (iconRes != null) {
+                        Image(
+                            painter = painterResource(id = iconRes),
+                            contentDescription = title,
+                            modifier = Modifier.size(38.dp)
+                        )
+                    }
+                }
+
+                Spacer(Modifier.width(12.dp))
+
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface
                 )
-                if (iconRes != null) {
-                    Spacer(Modifier.width(8.dp))
-                    Icon(
-                        painter = painterResource(id = iconRes),
-                        contentDescription = title,
-                        modifier = Modifier.size(40.dp),   // smaller so it fits nicely next to text
-                        tint = Color.Unspecified
-                    )
-                }
             }
-            Spacer(Modifier.height(12.dp))
+
+            Spacer(Modifier.height(10.dp))
 
             if (items.isEmpty()) {
                 Text(
                     text = emptyMessage,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                    textAlign = TextAlign.Start
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )
             } else {
-                Column(
-                    modifier = Modifier.weight(1f, fill = false),
-                    verticalArrangement = Arrangement.Top
-                ) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     items.take(3).forEach { item ->
-                        Text(
-                            text = "• $item",
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.padding(vertical = 2.dp)
-                        )
+                        Row(verticalAlignment = Alignment.Top) {
+                            Text(
+                                text = "•",
+                                color = accentColor,
+                                modifier = Modifier.padding(end = 6.dp)
+                            )
+                            Text(
+                                text = item,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
+
                     if (items.size > 3) {
+                        Spacer(Modifier.height(2.dp))
                         Text(
                             text = "+${items.size - 3} more",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(top = 4.dp)
+                            color = accentColor,
+                            fontWeight = FontWeight.SemiBold
                         )
                     }
                 }
@@ -377,165 +449,23 @@ private fun StatusCard(
     }
 }
 
-@Composable
-private fun SideDockButton(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Surface(
-        color = BellyGreen,
-        shape = RoundedCornerShape(topStart = 24.dp, bottomStart = 24.dp),
-        shadowElevation = 6.dp,
-        modifier = modifier
-            .size(width = 48.dp, height = 88.dp)
-            .clickable { onClick() }
-    ) {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Icon(
-                painter = painterResource(id = R.drawable.journal),
-                contentDescription = "Daily Journal",
-                tint = Color.White,
-                modifier = Modifier.size(28.dp)
-            )
-        }
-    }
-}
+enum class BottomItem { Settings, Grid, Home, Calendar, Bell }
 
-@Composable
-private fun DailyJournalSheet(
-    open: Boolean,
-    onClose: () -> Unit,
-    journalViewModel: DailyJournalViewModel,
-    modifier: Modifier = Modifier
-) {
-    BackHandler(open) { onClose() }
-
-    val dateFormat = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
-    val today = remember { dateFormat.format(Date()) }
-
-    val todaysEntry by journalViewModel.getJournalEntryByDate(today)
-        .collectAsState(initial = null)
-
-    var text by rememberSaveable { mutableStateOf("") }
-
-    LaunchedEffect(open, todaysEntry?.notes) {
-        if (open) text = todaysEntry?.notes.orEmpty()
-    }
-
-    AnimatedVisibility(visible = open, enter = fadeIn(), exit = fadeOut()) {
-        Box(
-            Modifier
-                .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.35f))
-                .clickable { onClose() }
-        )
-    }
-
-    AnimatedVisibility(
-        visible = open,
-        enter = slideInHorizontally(initialOffsetX = { it }) + fadeIn(),
-        exit = slideOutHorizontally(targetOffsetX = { it }) + fadeOut()
-    ) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Surface(
-                shape = RoundedCornerShape(24.dp),
-                tonalElevation = 8.dp,
-                shadowElevation = 8.dp,
-                modifier = modifier
-                    .fillMaxWidth(0.9f)
-                    .fillMaxHeight(0.9f)
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp)
-                ) {
-                    Text(
-                        text = "Daily Journal",
-                        style = MaterialTheme.typography.headlineSmall,
-                        modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center
-                    )
-
-                    Spacer(Modifier.height(12.dp))
-
-                    OutlinedTextField(
-                        value = text,
-                        onValueChange = { text = it },
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth(),
-                        placeholder = { Text("What did you eat or do today?") },
-                        minLines = 5
-                    )
-
-                    Spacer(Modifier.height(12.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Button(onClick = onClose, modifier = Modifier.weight(1f)) {
-                            Text("Cancel")
-                        }
-
-                        Button(
-                            onClick = {
-                                val trimmed = text.trim()
-                                if (trimmed.isEmpty()) return@Button
-
-                                val existing = todaysEntry
-                                if (existing != null) {
-                                    // ✅ UPDATE existing
-                                    journalViewModel.updateJournalEntry(
-                                        existing.copy(
-                                            notes = trimmed,
-                                            timeUpdated = System.currentTimeMillis()
-                                        )
-                                    )
-                                } else {
-                                    // ✅ INSERT new
-                                    journalViewModel.insertJournalEntry(
-                                        DailyJournal(
-                                            userId = 1, // will get overwritten by ViewModel anyway
-                                            date = today,
-                                            mood = "",
-                                            notes = trimmed
-                                        )
-                                    )
-                                }
-
-                                onClose()
-                            },
-                            modifier = Modifier.weight(1f),
-                            enabled = text.trim().isNotEmpty()
-                        ) {
-                            Text(if (todaysEntry == null) "Save" else "Save Changes")
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-enum class BottomItem { Settings, Grid, Home, Calendar, Bell}
 @Composable
 fun BottomToolBar(
     selected: BottomItem,
     onSelect: (BottomItem) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // This Surface floats above the nav bar area and has big rounded corners
     Surface(
-        color = Color(0xFF121212),            // black-ish
+        color = Color(0xFF121212),
         tonalElevation = 8.dp,
         shadowElevation = 12.dp,
         shape = RoundedCornerShape(28.dp),
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 12.dp)
-            .navigationBarsPadding()         // keep above gesture bar
+            .navigationBarsPadding()
     ) {
         Row(
             modifier = Modifier
@@ -547,52 +477,47 @@ fun BottomToolBar(
                 item = BottomItem.Settings,
                 selected = selected == BottomItem.Settings,
                 onClick = { onSelect(BottomItem.Settings) },
-                painter = painterResource(R.drawable.settings) // your vector
+                painter = painterResource(R.drawable.settings)
             )
             ToolbarIcon(
                 item = BottomItem.Grid,
                 selected = selected == BottomItem.Grid,
                 onClick = { onSelect(BottomItem.Grid) },
-                painter = painterResource(R.drawable.grid) // your vector
+                painter = painterResource(R.drawable.grid)
             )
             ToolbarIcon(
                 item = BottomItem.Home,
                 selected = selected == BottomItem.Home,
                 onClick = { onSelect(BottomItem.Home) },
-                painter = painterResource(R.drawable.home) // your vector
+                painter = painterResource(R.drawable.home)
             )
             ToolbarIcon(
                 item = BottomItem.Calendar,
                 selected = selected == BottomItem.Calendar,
                 onClick = { onSelect(BottomItem.Calendar) },
-                painter = painterResource(R.drawable.calendar) // your vector
+                painter = painterResource(R.drawable.calendar)
             )
             ToolbarIcon(
                 item = BottomItem.Bell,
                 selected = selected == BottomItem.Bell,
                 onClick = { onSelect(BottomItem.Bell) },
-                painter = painterResource(R.drawable.bell) // your vector
+                painter = painterResource(R.drawable.bell)
             )
         }
     }
 }
 
-// --- Single icon with selected highlight + optional red dot for Bell ---
 @Composable
 private fun ToolbarIcon(
     item: BottomItem,
     selected: Boolean,
     onClick: () -> Unit,
-    painter: Painter,
+    painter: Painter
 ) {
-
     Box(
         contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .size(44.dp)
-            .clickable(onClick = onClick)
+        modifier = Modifier.size(44.dp)
     ) {
-        // Selected: green circular background
         if (selected) {
             Surface(
                 color = BellyGreen,
@@ -601,11 +526,13 @@ private fun ToolbarIcon(
             ) {}
         }
 
-        Icon(
-            painter = painter,
-            contentDescription = item.name,
-            tint = Color.White,
-            modifier = Modifier.size(30.dp)
-        )
+        IconButton(onClick = onClick) {
+            Icon(
+                painter = painter,
+                contentDescription = item.name,
+                tint = Color.White,
+                modifier = Modifier.size(30.dp)
+            )
+        }
     }
 }
