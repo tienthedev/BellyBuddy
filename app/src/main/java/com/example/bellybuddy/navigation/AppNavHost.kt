@@ -4,26 +4,14 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.bellybuddy.userint.screen.DashboardScreen
-import com.example.bellybuddy.userint.screen.LoginScreen
-import com.example.bellybuddy.userint.screen.SettingsScreen
-import com.example.bellybuddy.userint.screen.BottomItem
-import com.example.bellybuddy.userint.screen.BowelMovementScreen
-import com.example.bellybuddy.userint.screen.GridScreen
-import com.example.bellybuddy.userint.screen.CalendarScreen
-import com.example.bellybuddy.userint.screen.DailyJournalingScreen
-import com.example.bellybuddy.userint.screen.FoodLoggingScreen
-import com.example.bellybuddy.userint.screen.ReminderScreen
-import com.example.bellybuddy.userint.screen.ProfileScreen
-import com.example.bellybuddy.userint.screen.SymptomScreen
-import com.example.bellybuddy.userint.screen.EditProfileScreen
-import com.example.bellybuddy.userint.screen.DailyScoreScreen
-import com.example.bellybuddy.userint.screen.WeightScreen
-import com.example.bellybuddy.userint.screen.UserListScreen
+import com.example.bellybuddy.userint.screen.*
+import com.example.bellybuddy.viewmodel.UserViewModel
 
 @Composable
-fun AppNavHost(navController: NavHostController) {
-
+fun AppNavHost(
+    navController: NavHostController,
+    userViewModel: UserViewModel
+) {
     // Helper to navigate without piling up duplicates of top-level screens
     fun go(route: Route) {
         navController.navigate(route.path) {
@@ -35,15 +23,51 @@ fun AppNavHost(navController: NavHostController) {
 
     NavHost(
         navController = navController,
-        startDestination = Route.Login.path
+        startDestination = Route.Splash.path
     ) {
+        composable(Route.Splash.path) {
+            SplashScreen(
+                userViewModel = userViewModel,
+                onNavigateToProfile = {
+                    navController.navigate(Route.InitialProfile.path) {
+                        popUpTo(Route.Splash.path) { inclusive = true }
+                    }
+                },
+                onNavigateToDashboard = {
+                    navController.navigate(Route.Dashboard.path) {
+                        popUpTo(Route.Splash.path) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable(Route.InitialProfile.path) {
+            InitialProfileScreen(
+                onComplete = { name, age, weight, height, _ ->
+                    userViewModel.registerUser(
+                        name = name,
+                        email = "user@example.com",
+                        password = "password",
+                        age = age,
+                        weight = weight,
+                        height = height
+                    ) { success, _ ->
+                        if (success) {
+                            navController.navigate(Route.Dashboard.path) {
+                                popUpTo(Route.InitialProfile.path) { inclusive = true }
+                            }
+                        }
+                    }
+                }
+            )
+        }
+
         composable(Route.Login.path) {
             LoginScreen(
                 onLoginSuccess = { go(Route.Dashboard) }
             )
         }
 
-        // Add the new destination to the NavHost
         composable(Route.UserList.path) {
             UserListScreen(
                 onBack = { navController.popBackStack() }
@@ -52,17 +76,23 @@ fun AppNavHost(navController: NavHostController) {
 
         composable(Route.Dashboard.path) {
             DashboardScreen(
+                userViewModel = userViewModel,
                 onProfileClick = { go(Route.Profile) },
                 onBottomSelect = { item ->
                     when (item) {
-                        BottomItem.Home     -> go(Route.Dashboard) // already here; keeps highlight
+                        BottomItem.Home     -> go(Route.Dashboard)
                         BottomItem.Settings -> go(Route.Settings)
                         BottomItem.Grid     -> go(Route.Grid)
                         BottomItem.Calendar -> go(Route.Calendar)
                         BottomItem.Bell     -> go(Route.Bell)
                     }
                 },
-                onLogout = { navController.popBackStack(Route.Login.path, inclusive = false) },
+                onLogout = { 
+                    userViewModel.logout()
+                    navController.navigate(Route.InitialProfile.path) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
                 onDailyScoreClick = { navController.navigate(Route.DailyScore.path) },
                 onWeightClick = { navController.navigate(Route.Weight.path) },
                 onReminderClick = { go(Route.Bell) }
@@ -71,6 +101,7 @@ fun AppNavHost(navController: NavHostController) {
 
         composable(Route.Settings.path) {
             SettingsScreen(
+                userViewModel = userViewModel,
                 onSelectBottom = { item ->
                     when (item) {
                         BottomItem.Home     -> go(Route.Dashboard)
@@ -143,7 +174,7 @@ fun AppNavHost(navController: NavHostController) {
                         BottomItem.Bell -> go(Route.Bell)
                     }
                 },
-                onBack = { go(Route.Dashboard) }, // back button
+                onBack = { go(Route.Dashboard) },
                 onGoToSettings = { go(Route.Settings) },
                 onEditProfile = { go(Route.EditProfile) }
             )
@@ -217,9 +248,8 @@ fun AppNavHost(navController: NavHostController) {
         }
 
         composable(Route.DailyScore.path) {
-            val score = 88 // TEMP — replace later with real selected date score
             DailyScoreScreen(
-                score = score,
+                score = 88,
                 onBottomSelect = { item ->
                     when (item) {
                         BottomItem.Home     -> go(Route.Dashboard)

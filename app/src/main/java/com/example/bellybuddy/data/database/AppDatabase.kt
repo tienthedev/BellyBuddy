@@ -11,12 +11,12 @@ import com.example.bellybuddy.data.model.*
     entities = [
         User::class,
         FoodLog::class,
-        Symptom::class,              // symptom_entry table
-        BowelMovement::class,         // bowel_movement_entry table
-        BowelSymptomLink::class,       // bowel_symptom_link junction table
+        Symptom::class,
+        BowelMovement::class,
+        BowelSymptomLink::class,
         DailyJournal::class
     ],
-    version = 9,  // Increment version
+    version = 10,  // Incremented version
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

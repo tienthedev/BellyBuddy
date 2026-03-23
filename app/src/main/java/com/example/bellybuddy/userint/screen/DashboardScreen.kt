@@ -1,6 +1,5 @@
 package com.example.bellybuddy.userint.screen
 
-import android.app.Application
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -13,14 +12,12 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -34,7 +31,6 @@ import com.example.bellybuddy.userint.component.ReminderCard
 import com.example.bellybuddy.userint.component.WeightCard
 import com.example.bellybuddy.viewmodel.DailyJournalViewModel
 import com.example.bellybuddy.viewmodel.UserViewModel
-import com.example.bellybuddy.viewmodel.UserViewModelFactory
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -43,6 +39,7 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
+    userViewModel: UserViewModel,
     onProfileClick: (() -> Unit)? = null,
     onBottomSelect: (BottomItem) -> Unit,
     onLogout: (() -> Unit)? = null,
@@ -51,12 +48,6 @@ fun DashboardScreen(
     onReminderClick: (() -> Unit)? = null,
     score: Int = 88
 ) {
-    val application = LocalContext.current.applicationContext as Application
-
-    val userViewModel: UserViewModel = viewModel(
-        factory = UserViewModelFactory(application)
-    )
-
     val journalViewModel: DailyJournalViewModel = viewModel()
     val loggedInUser by userViewModel.loggedInUser.collectAsState()
 
@@ -122,7 +113,7 @@ fun DashboardScreen(
             Spacer(Modifier.height(3.dp))
 
             Text(
-                text = "$greeting, Robie",
+                text = "$greeting, ${loggedInUser?.name ?: "User"}",
                 style = MaterialTheme.typography.headlineMedium.copy(
                     fontWeight = FontWeight.Bold
                 ),
@@ -152,7 +143,7 @@ fun DashboardScreen(
 
                 WeightCard(
                     title = "Weight",
-                    value = "${loggedInUser?.weight ?: "--"} lbs",
+                    value = if (loggedInUser?.weight != null) "${loggedInUser?.weight} lbs" else "-- lbs",
                     modifier = Modifier
                         .weight(1f)
                         .height(150.dp)
@@ -195,7 +186,7 @@ fun DashboardScreen(
                     } else {
                         journalViewModel.insertJournalEntry(
                             DailyJournal(
-                                userId = 1,
+                                userId = loggedInUser?.id ?: 0,
                                 date = today,
                                 mood = "",
                                 notes = trimmed

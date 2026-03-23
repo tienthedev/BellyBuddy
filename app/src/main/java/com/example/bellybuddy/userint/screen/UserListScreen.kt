@@ -73,7 +73,7 @@ fun UserListScreen(
             )
             Button(
                 onClick = {
-                    viewModel.insertUser(name, email)
+                    viewModel.registerUser(name, email, "password") { _, _ -> }
                     // Clear fields after adding
                     name = ""
                     email = ""

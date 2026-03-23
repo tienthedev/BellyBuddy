@@ -1,12 +1,11 @@
 package com.example.bellybuddy.userint.screen
 
 import android.app.Application
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -18,11 +17,15 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
+    userViewModel: UserViewModel,
     onSelectBottom: (BottomItem) -> Unit
 ) {
     val context = LocalContext.current
     val application = context.applicationContext as Application
     val coroutineScope = rememberCoroutineScope()
+
+    var isExporting by remember { mutableStateOf(false) }
+    var exportProgress by remember { mutableStateOf(0f) }
 
     // Instantiate ViewModels
     val bowelMovementViewModel: BowelMovementViewModel = viewModel()
@@ -42,7 +45,8 @@ fun SettingsScreen(
     // Instantiate ExportViewModel with the factory
     val exportViewModel: ExportViewModel = viewModel(factory = exportViewModelFactory)
 
-    // Collect data from the ExportViewModel
+    // Collect data
+    val loggedInUser by userViewModel.loggedInUser.collectAsState()
     val bowelMovements by exportViewModel.getAllBowelMovements().collectAsState(initial = emptyList())
     val dailyJournals by exportViewModel.getAllDailyJournals().collectAsState(initial = emptyList())
     val foodLogs by exportViewModel.getAllFoodLogs().collectAsState(initial = emptyList())
@@ -54,7 +58,7 @@ fun SettingsScreen(
         },
         bottomBar = {
             BottomToolBar(
-                selected = BottomItem.Settings,   // ← green circle on Settings
+                selected = BottomItem.Settings,
                 onSelect = onSelectBottom
             )
         }
@@ -63,16 +67,44 @@ fun SettingsScreen(
             Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp)
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Settings screen stuff here", style = MaterialTheme.typography.headlineSmall)
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = {
-                coroutineScope.launch {
-                    generatePdf(context, bowelMovements, dailyJournals, foodLogs, symptoms)
+            Text("Settings", style = MaterialTheme.typography.headlineSmall)
+            
+            Spacer(modifier = Modifier.height(32.dp))
+
+            if (isExporting) {
+                Text("Generating Beautiful Report... ${(exportProgress * 100).toInt()}%")
+                Spacer(modifier = Modifier.height(8.dp))
+                LinearProgressIndicator(
+                    progress = { exportProgress },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            } else {
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        isExporting = true
+                        exportProgress = 0f
+                        coroutineScope.launch {
+                            generatePdf(
+                                context,
+                                loggedInUser,
+                                bowelMovements,
+                                dailyJournals,
+                                foodLogs,
+                                symptoms
+                            ) { progress ->
+                                exportProgress = progress
+                            }
+                            isExporting = false
+                            Toast.makeText(context, "Report Exported to Downloads", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                ) {
+                    Text("Export Health Report (PDF)")
                 }
-            }) {
-                Text("Export PDF")
             }
         }
     }

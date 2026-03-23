@@ -1,8 +1,10 @@
 package com.example.bellybuddy.navigation
 
 sealed class Route(val path: String) {
+    data object Splash : Route("splash")
     data object UserList : Route("user_list")
     data object Login : Route("login")
+    data object InitialProfile : Route("initial_profile")
     data object Dashboard : Route("dashboard")
     data object Settings : Route("settings")
     data object Grid: Route("grid")
