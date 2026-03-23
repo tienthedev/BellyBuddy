@@ -217,7 +217,9 @@ fun AppNavHost(navController: NavHostController) {
         }
 
         composable(Route.DailyScore.path) {
+            val score = 88 // TEMP — replace later with real selected date score
             DailyScoreScreen(
+                score = score,
                 onBottomSelect = { item ->
                     when (item) {
                         BottomItem.Home     -> go(Route.Dashboard)

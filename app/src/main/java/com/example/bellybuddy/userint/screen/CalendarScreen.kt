@@ -1,16 +1,50 @@
 package com.example.bellybuddy.userint.screen
 
-import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronLeft
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.OutlinedIconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -19,21 +53,26 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.border
-import com.example.bellybuddy.ui.theme.*
-import com.example.bellybuddy.R
-import java.util.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronLeft
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.foundation.BorderStroke
-import com.example.bellybuddy.userint.component.DailyScoreCard
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.bellybuddy.R
+import com.example.bellybuddy.data.model.BowelMovement
+import com.example.bellybuddy.data.model.DailyJournal
+import com.example.bellybuddy.data.model.FoodLog
+import com.example.bellybuddy.data.model.Symptom
+import com.example.bellybuddy.ui.theme.BellyGreen
+import com.example.bellybuddy.ui.theme.BellyGreenDark
+import com.example.bellybuddy.ui.theme.BellyGreenLight
+import com.example.bellybuddy.ui.theme.ErrorRed
+import com.example.bellybuddy.ui.theme.SuccessGreen
+import com.example.bellybuddy.ui.theme.WarningYellow
+import com.example.bellybuddy.viewmodel.BowelMovementViewModel
 import com.example.bellybuddy.viewmodel.DailyJournalViewModel
 import com.example.bellybuddy.viewmodel.FoodLogViewModel
 import com.example.bellybuddy.viewmodel.SymptomViewModel
-import com.example.bellybuddy.viewmodel.BowelMovementViewModel
 import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,14 +84,11 @@ fun CalendarScreen(
     bowelViewModel: BowelMovementViewModel = viewModel()
 ) {
     var selectedDay by remember {
-        mutableStateOf(
-            Calendar.getInstance().get(Calendar.DAY_OF_MONTH)
-        )
+        mutableStateOf(Calendar.getInstance().get(Calendar.DAY_OF_MONTH))
     }
     val currentMonth = remember { mutableStateOf(Calendar.getInstance().get(Calendar.MONTH)) }
     val currentYear = remember { mutableStateOf(Calendar.getInstance().get(Calendar.YEAR)) }
 
-    // Format the selected date to match database format (yyyy-MM-dd)
     val selectedDateString = remember(selectedDay, currentMonth.value, currentYear.value) {
         val calendar = Calendar.getInstance()
         calendar.set(currentYear.value, currentMonth.value, selectedDay)
@@ -60,21 +96,22 @@ fun CalendarScreen(
         dateFormat.format(calendar.time)
     }
 
-    // Get journal entry for the selected date
     val journalEntry by journalViewModel.getJournalEntryByDate(selectedDateString)
         .collectAsState(initial = null)
 
-    // Get food logs for the selected date
     val foodLogs by foodViewModel.getFoodLogsByDate(selectedDateString)
         .collectAsState(initial = emptyList())
 
-    // Get symptoms for the selected date
     val symptoms by symptomViewModel.getSymptomsByDate(selectedDateString)
         .collectAsState(initial = emptyList())
 
-    // Get bowel movements for the selected date
     val bowelMovements by bowelViewModel.getBowelMovementsByDate(selectedDateString)
         .collectAsState(initial = emptyList())
+
+    // Generate the month's scores ONE time per month/year
+    val monthHealthData = remember(currentMonth.value, currentYear.value) {
+        generateSampleHealthData(currentMonth.value, currentYear.value)
+    }
 
     Scaffold(
         topBar = {
@@ -108,7 +145,6 @@ fun CalendarScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
-                // Month navigation header
                 MonthNavigationHeader(
                     currentMonth = currentMonth.value,
                     currentYear = currentYear.value,
@@ -132,13 +168,12 @@ fun CalendarScreen(
             }
 
             item {
-                // Calendar grid
                 CalendarGrid(
                     month = currentMonth.value,
                     year = currentYear.value,
                     selectedDay = selectedDay,
                     onDaySelected = { selectedDay = it },
-                    healthData = generateSampleHealthData(currentMonth.value, currentYear.value)
+                    healthData = monthHealthData
                 )
             }
 
@@ -148,20 +183,22 @@ fun CalendarScreen(
 
             item {
                 val today = Calendar.getInstance()
-                val isCurrentMonthAndYear = today.get(Calendar.MONTH) == currentMonth.value &&
-                        today.get(Calendar.YEAR) == currentYear.value
+                val isCurrentMonthAndYear =
+                    today.get(Calendar.MONTH) == currentMonth.value &&
+                            today.get(Calendar.YEAR) == currentYear.value
                 val todayDay = if (isCurrentMonthAndYear) today.get(Calendar.DAY_OF_MONTH) else -1
 
-                val isFutureMonth = currentYear.value > today.get(Calendar.YEAR) ||
-                        (currentYear.value == today.get(Calendar.YEAR) && currentMonth.value > today.get(Calendar.MONTH))
+                val isFutureMonth =
+                    currentYear.value > today.get(Calendar.YEAR) ||
+                            (currentYear.value == today.get(Calendar.YEAR) &&
+                                    currentMonth.value > today.get(Calendar.MONTH))
                 val isFutureDate = isFutureMonth || (isCurrentMonthAndYear && selectedDay > todayDay)
 
-                // Selected date info
                 SelectedDateInfo(
                     day = selectedDay,
                     month = currentMonth.value,
                     year = currentYear.value,
-                    healthData = if (isFutureDate) null else generateSampleHealthData(currentMonth.value, currentYear.value)[selectedDay],
+                    healthData = if (isFutureDate) null else monthHealthData[selectedDay],
                     journalEntry = journalEntry,
                     foodLogs = foodLogs,
                     symptoms = symptoms,
@@ -272,10 +309,7 @@ private fun CalendarGrid(
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            // Day labels
+        Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
@@ -295,19 +329,16 @@ private fun CalendarGrid(
 
             Spacer(Modifier.height(8.dp))
 
-            // Calendar grid
             LazyVerticalGrid(
                 columns = GridCells.Fixed(7),
                 modifier = Modifier.height(300.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                // Empty cells for days before the first day of the month
                 items(firstDayOfWeek) {
                     Box(modifier = Modifier.aspectRatio(1f))
                 }
 
-                // Days of the month
                 items(daysInMonth) { dayIndex ->
                     val day = dayIndex + 1
                     val isFutureDate = isCurrentMonthAndYear && day > todayDay
@@ -336,8 +367,8 @@ private fun CalendarDayCell(
     val shape = RoundedCornerShape(12.dp)
     val borderColor = when {
         isSelected -> BellyGreenDark
-        isToday    -> BellyGreen.copy(alpha = 0.6f)
-        else       -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f)
+        isToday -> BellyGreen.copy(alpha = 0.6f)
+        else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f)
     }
     val borderWidth = if (isSelected) 2.dp else 1.dp
 
@@ -348,8 +379,8 @@ private fun CalendarDayCell(
             .background(
                 color = when {
                     isSelected -> BellyGreen
-                    isToday    -> BellyGreen.copy(alpha = 0.15f)
-                    else       -> Color.Transparent
+                    isToday -> BellyGreen.copy(alpha = 0.15f)
+                    else -> Color.Transparent
                 },
                 shape = shape
             )
@@ -365,8 +396,8 @@ private fun CalendarDayCell(
                 ),
                 color = when {
                     isSelected -> Color.White
-                    isToday    -> BellyGreenDark
-                    else       -> MaterialTheme.colorScheme.onSurface
+                    isToday -> BellyGreenDark
+                    else -> MaterialTheme.colorScheme.onSurface
                 }
             )
             healthData?.let {
@@ -393,17 +424,17 @@ private fun SelectedDateInfo(
     month: Int,
     year: Int,
     healthData: HealthDayData?,
-    journalEntry: com.example.bellybuddy.data.model.DailyJournal?,
-    foodLogs: List<com.example.bellybuddy.data.model.FoodLog>,
-    symptoms: List<com.example.bellybuddy.data.model.Symptom>,
-    bowelMovements: List<com.example.bellybuddy.data.model.BowelMovement>
+    journalEntry: DailyJournal?,
+    foodLogs: List<FoodLog>,
+    symptoms: List<Symptom>,
+    bowelMovements: List<BowelMovement>
 ) {
     val monthNames = listOf(
         "January", "February", "March", "April", "May", "June",
         "July", "August", "September", "October", "November", "December"
     )
 
-    var selectedTab by remember { mutableStateOf(DayInfoTab.Food) }
+    var selectedTab by remember(day, month, year) { mutableStateOf(DayInfoTab.Food) }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -451,7 +482,6 @@ private fun SelectedDateInfo(
                         )
                     }
 
-                    // Circle tab buttons
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.Center,
@@ -469,7 +499,6 @@ private fun SelectedDateInfo(
                         }
                     }
 
-                    // Content based on selected tab
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -479,12 +508,9 @@ private fun SelectedDateInfo(
                             containerColor = BellyGreenLight.copy(alpha = 0.1f)
                         )
                     ) {
-                        Box(
-                            modifier = Modifier.padding(16.dp)
-                        ) {
+                        Box(modifier = Modifier.padding(16.dp)) {
                             when (selectedTab) {
                                 DayInfoTab.Food -> {
-                                    // Display real food data from database
                                     if (foodLogs.isEmpty()) {
                                         Text(
                                             text = "No food recorded for this day.",
@@ -493,15 +519,14 @@ private fun SelectedDateInfo(
                                         )
                                     } else {
                                         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                                            // Group food logs by meal type
                                             val groupedFoods = foodLogs.groupBy { it.mealType }
 
-                                            // Display meals in order
                                             listOf("BREAKFAST", "LUNCH", "DINNER", "SNACK").forEach { mealType ->
                                                 groupedFoods[mealType]?.let { foods ->
                                                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                                                         Text(
-                                                            text = mealType.lowercase().replaceFirstChar { it.uppercase() },
+                                                            text = mealType.lowercase()
+                                                                .replaceFirstChar { it.uppercase() },
                                                             style = MaterialTheme.typography.titleSmall.copy(
                                                                 fontWeight = FontWeight.Bold
                                                             ),
@@ -530,8 +555,8 @@ private fun SelectedDateInfo(
                                         }
                                     }
                                 }
+
                                 DayInfoTab.Symptoms -> {
-                                    // Display real symptoms data from database
                                     if (symptoms.isEmpty()) {
                                         Text(
                                             text = "No symptoms recorded for this day.",
@@ -577,8 +602,8 @@ private fun SelectedDateInfo(
                                         }
                                     }
                                 }
+
                                 DayInfoTab.Bowel -> {
-                                    // Display real bowel movement data from database
                                     if (bowelMovements.isEmpty()) {
                                         Text(
                                             text = "No bowel movements recorded for this day.",
@@ -598,7 +623,6 @@ private fun SelectedDateInfo(
                                                         .padding(12.dp),
                                                     verticalArrangement = Arrangement.spacedBy(4.dp)
                                                 ) {
-                                                    // Time and main info
                                                     Row(
                                                         modifier = Modifier.fillMaxWidth(),
                                                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -612,19 +636,17 @@ private fun SelectedDateInfo(
                                                             color = BellyGreenDark
                                                         )
                                                         Text(
-                                                            text = "${bm.consistency}",
+                                                            text = bm.consistency,
                                                             style = MaterialTheme.typography.bodySmall,
                                                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                                                         )
                                                     }
 
-                                                    // Color
                                                     Text(
                                                         text = "Color: ${bm.color}",
                                                         style = MaterialTheme.typography.bodyMedium
                                                     )
 
-                                                    // Pain and Urgency levels
                                                     Row(
                                                         modifier = Modifier.fillMaxWidth(),
                                                         horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -688,67 +710,64 @@ private fun SelectedDateInfo(
                                                         }
                                                     }
 
-                                                    // Blood and Mucus indicators
                                                     if (bm.blood || bm.mucus) {
                                                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                                             if (bm.blood) {
                                                                 Surface(
-                                                                    shape = RoundedCornerShape(4.dp),
+                                                                    shape = RoundedCornerShape(6.dp),
                                                                     color = ErrorRed.copy(alpha = 0.15f)
                                                                 ) {
                                                                     Text(
-                                                                        text = "🔴 Blood",
-                                                                        style = MaterialTheme.typography.bodySmall,
+                                                                        text = "Blood",
                                                                         color = ErrorRed,
-                                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                                        style = MaterialTheme.typography.bodySmall.copy(
+                                                                            fontWeight = FontWeight.Bold
+                                                                        ),
+                                                                        modifier = Modifier.padding(
+                                                                            horizontal = 8.dp,
+                                                                            vertical = 4.dp
+                                                                        )
                                                                     )
                                                                 }
                                                             }
                                                             if (bm.mucus) {
                                                                 Surface(
-                                                                    shape = RoundedCornerShape(4.dp),
+                                                                    shape = RoundedCornerShape(6.dp),
                                                                     color = WarningYellow.copy(alpha = 0.15f)
                                                                 ) {
                                                                     Text(
-                                                                        text = "💧 Mucus",
-                                                                        style = MaterialTheme.typography.bodySmall,
+                                                                        text = "Mucus",
                                                                         color = WarningYellow.copy(alpha = 0.9f),
-                                                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                                        style = MaterialTheme.typography.bodySmall.copy(
+                                                                            fontWeight = FontWeight.Bold
+                                                                        ),
+                                                                        modifier = Modifier.padding(
+                                                                            horizontal = 8.dp,
+                                                                            vertical = 4.dp
+                                                                        )
                                                                     )
                                                                 }
                                                             }
                                                         }
-                                                    }
-
-                                                    // Notes if present
-                                                    if (bm.notes.isNotEmpty()) {
-                                                        Text(
-                                                            text = "Note: ${bm.notes}",
-                                                            style = MaterialTheme.typography.bodySmall,
-                                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                                            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
-                                                        )
                                                     }
                                                 }
                                             }
                                         }
                                     }
                                 }
+
                                 DayInfoTab.Journal -> {
-                                    // Display real journal data from database
-                                    if (journalEntry != null) {
-                                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                            Text(
-                                                text = journalEntry.notes,
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                lineHeight = MaterialTheme.typography.bodyMedium.lineHeight
-                                            )
-                                        }
-                                    } else {
+                                    if (journalEntry?.notes.isNullOrBlank()) {
                                         Text(
-                                            text = "No journal notes recorded for this day.",
+                                            text = "No journal entry for this day.",
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                        )
+                                    } else {
+                                        Text(
+                                            text = journalEntry?.notes.orEmpty(),
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            color = MaterialTheme.colorScheme.onSurface
                                         )
                                     }
                                 }
@@ -758,7 +777,7 @@ private fun SelectedDateInfo(
                 }
             } ?: run {
                 Text(
-                    text = "No data recorded for this day",
+                    text = "No health data available for this date.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )
@@ -773,42 +792,33 @@ private fun CircleTabButton(
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.clickable(onClick = onClick)
+    val iconRes = getIconResourceForTab(label)
+
+    Surface(
+        modifier = Modifier
+            .size(54.dp)
+            .clickable { onClick() },
+        shape = CircleShape,
+        color = if (isSelected) BellyGreen else BellyGreenLight.copy(alpha = 0.35f),
+        tonalElevation = if (isSelected) 4.dp else 0.dp,
+        shadowElevation = if (isSelected) 4.dp else 0.dp
     ) {
-        Box(
-            modifier = Modifier
-                .size(60.dp)
-                .clip(CircleShape)
-                .background(
-                    if (isSelected) BellyGreen else BellyGreenLight.copy(alpha = 0.3f)
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            val iconRes = getIconResourceForTab(label)
+        Box(contentAlignment = Alignment.Center) {
             if (iconRes != null) {
                 Icon(
                     painter = painterResource(id = iconRes),
                     contentDescription = label,
-                    modifier = Modifier.size(32.dp),
-                    tint = Color.Unspecified  // This preserves the original PNG colors
+                    tint = if (isSelected) Color.White else BellyGreenDark,
+                    modifier = Modifier.size(24.dp)
                 )
             } else {
                 Text(
-                    text = label.firstOrNull()?.uppercase() ?: "",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    text = label.take(1),
+                    color = if (isSelected) Color.White else BellyGreenDark,
+                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
                 )
             }
         }
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelSmall,
-            color = if (isSelected) BellyGreen else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-        )
     }
 }
 
@@ -900,10 +910,10 @@ private fun generateSampleHealthData(month: Int, year: Int): Map<Int, HealthDayD
             journal = emptyList()
         )
     }
+
     return data
 }
 
-// Helper function to format bowel movement time
 private fun formatBowelTime(time: String): String {
     return try {
         val inputFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
