@@ -32,14 +32,12 @@ import com.example.bellybuddy.viewmodel.BowelMovementViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
-// Data class for Bristol Stool Scale types
 data class BristolType(
     val number: Int,
-    val iconRes: Int,  // Changed from emoji to drawable resource ID
+    val iconRes: Int,
     val description: String
 )
 
-// Enum for stool colors
 enum class StoolColor(val displayName: String, val color: Color) {
     BROWN("Brown", Color(0xFF8B4513)),
     LIGHT_BROWN("Light Brown", Color(0xFFCD853F)),
@@ -58,10 +56,12 @@ fun BristolTypeButton(
 ) {
     OutlinedButton(
         onClick = onClick,
-        modifier = modifier.height(80.dp),
+        // FIX: heightIn instead of height(80.dp) so it flexes on smaller screens
+        modifier = modifier.heightIn(min = 72.dp),
         colors = ButtonDefaults.outlinedButtonColors(
-            containerColor = if (isSelected) BellyGreenLight else Color.White,
-            contentColor = Color.Black
+            // FIX: theme surface instead of hardcoded Color.White
+            containerColor = if (isSelected) BellyGreenLight else MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.onSurface
         ),
         border = BorderStroke(
             width = if (isSelected) 2.dp else 1.dp,
@@ -113,9 +113,7 @@ fun ColorCircleButton(
                 color = if (isSelected) BellyGreenDark else NeutralGray
             ),
             contentPadding = PaddingValues(0.dp)
-        ) {
-            // Empty content - just showing the color
-        }
+        ) {}
 
         Spacer(modifier = Modifier.height(4.dp))
 
@@ -123,7 +121,8 @@ fun ColorCircleButton(
             text = stoolColor.displayName,
             fontSize = 11.sp,
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-            color = Color.Black
+            // FIX: theme color instead of hardcoded Color.Black
+            color = MaterialTheme.colorScheme.onSurface
         )
     }
 }
@@ -138,22 +137,18 @@ fun BowelMovementScreen(
     val context = LocalContext.current
     val calendar = Calendar.getInstance()
 
-    // Date/Time formats
     val dateFormatDisplay = SimpleDateFormat("MM/dd/yyyy", Locale.getDefault())
     val timeFormatDisplay = SimpleDateFormat("h:mm a", Locale.getDefault())
     val dateFormatDB = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
     val timeFormatDB = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
 
-    // Auto-fill with current date and time
     var selectedDate by remember { mutableStateOf(dateFormatDisplay.format(calendar.time)) }
     var selectedTime by remember { mutableStateOf(timeFormatDisplay.format(calendar.time)) }
     var selectedDateDB by remember { mutableStateOf(dateFormatDB.format(calendar.time)) }
 
-    // Get saved bowel movements for today
     val savedBowelMovements by viewModel.getBowelMovementsByDate(selectedDateDB)
         .collectAsState(initial = emptyList())
 
-    // Form state
     var frequency by remember { mutableStateOf(1) }
     var selectedBristolType by remember { mutableStateOf<Int?>(null) }
     var selectedColor by remember { mutableStateOf<StoolColor?>(null) }
@@ -164,7 +159,6 @@ fun BowelMovementScreen(
     var selectedSymptoms by remember { mutableStateOf(setOf<String>()) }
     var notes by remember { mutableStateOf("") }
 
-    // Bristol types with custom icons
     val bristolTypes = listOf(
         BristolType(1, R.drawable.bristol_type_1, "Hard Lumps"),
         BristolType(2, R.drawable.bristol_type_2, "Lumpy Sausage"),
@@ -175,7 +169,6 @@ fun BowelMovementScreen(
         BristolType(7, R.drawable.bristol_type_7, "Liquid")
     )
 
-    // Date picker dialog
     val datePickerDialog = DatePickerDialog(
         context,
         { _, year, month, day ->
@@ -188,7 +181,6 @@ fun BowelMovementScreen(
         calendar.get(Calendar.DAY_OF_MONTH)
     )
 
-    // Time picker dialog
     val timePickerDialog = TimePickerDialog(
         context,
         { _, hour, minute ->
@@ -209,16 +201,15 @@ fun BowelMovementScreen(
                 title = {
                     Text(
                         "Log Bowel Movement",
-                        color = Color.Black,
+                        // FIX: theme color instead of hardcoded Color.Black
+                        color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Bold
                     )
                 },
                 navigationIcon = {
                     TextButton(
                         onClick = onBack,
-                        colors = ButtonDefaults.textButtonColors(
-                            contentColor = BellyGreenDark
-                        )
+                        colors = ButtonDefaults.textButtonColors(contentColor = BellyGreenDark)
                     ) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
@@ -228,32 +219,29 @@ fun BowelMovementScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = Color.Black
+                    // FIX: theme surface instead of hardcoded Color.White
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
                 )
             )
         },
         bottomBar = {
-            BottomToolBar(
-                selected = BottomItem.Grid,
-                onSelect = onSelectBottom
-            )
+            BottomToolBar(selected = BottomItem.Grid, onSelect = onSelectBottom)
         },
-        containerColor = Color.White
+        // FIX: theme surface instead of hardcoded Color.White
+        containerColor = MaterialTheme.colorScheme.surface
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Input Form (Scrollable)
             Column(
                 modifier = Modifier
                     .weight(0.6f)
                     .verticalScroll(rememberScrollState())
                     .padding(16.dp)
             ) {
-                // Date & Time Section
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -265,47 +253,41 @@ fun BowelMovementScreen(
                         text = "Date & Time",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color.Black
+                        // FIX: theme color
+                        color = MaterialTheme.colorScheme.onSurface
                     )
-
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         OutlinedButton(
                             onClick = { datePickerDialog.show() },
                             colors = ButtonDefaults.outlinedButtonColors(
-                                containerColor = Color.White,
-                                contentColor = Color.Black
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                contentColor = MaterialTheme.colorScheme.onSurface
                             ),
                             border = BorderStroke(1.dp, NeutralGray)
-                        ) {
-                            Text(selectedDate, fontSize = 14.sp)
-                        }
+                        ) { Text(selectedDate, fontSize = 14.sp) }
 
                         OutlinedButton(
                             onClick = { timePickerDialog.show() },
                             colors = ButtonDefaults.outlinedButtonColors(
-                                containerColor = Color.White,
-                                contentColor = Color.Black
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                contentColor = MaterialTheme.colorScheme.onSurface
                             ),
                             border = BorderStroke(1.dp, NeutralGray)
-                        ) {
-                            Text(selectedTime, fontSize = 14.sp)
-                        }
+                        ) { Text(selectedTime, fontSize = 14.sp) }
                     }
                 }
 
                 HorizontalDivider(thickness = 1.dp, color = LightGray)
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Bristol Stool Scale (Consistency)
                 Column(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
                     Text(
                         text = "Consistency (Bristol Stool Scale)",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(bottom = 12.dp)
                     )
-
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -319,9 +301,7 @@ fun BowelMovementScreen(
                             )
                         }
                     }
-
                     Spacer(modifier = Modifier.height(8.dp))
-
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -341,16 +321,14 @@ fun BowelMovementScreen(
                 HorizontalDivider(thickness = 1.dp, color = LightGray)
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Color Picker
                 Column(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
                     Text(
                         text = "Color",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(bottom = 12.dp)
                     )
-
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly
@@ -368,7 +346,6 @@ fun BowelMovementScreen(
                 HorizontalDivider(thickness = 1.dp, color = LightGray)
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Pain Level Slider
                 Column(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -379,26 +356,23 @@ fun BowelMovementScreen(
                             text = "Pain Level",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color.Black
+                            color = MaterialTheme.colorScheme.onSurface
                         )
-
                         Box(
                             modifier = Modifier
-                                .background(Color.Black, shape = MaterialTheme.shapes.medium)
+                                .background(MaterialTheme.colorScheme.onSurface, shape = MaterialTheme.shapes.medium)
                                 .padding(horizontal = 12.dp, vertical = 6.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = painLevel.toInt().toString(),
-                                color = Color.White,
+                                color = MaterialTheme.colorScheme.surface,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp
                             )
                         }
                     }
-
                     Spacer(modifier = Modifier.height(12.dp))
-
                     Slider(
                         value = painLevel,
                         onValueChange = { painLevel = it },
@@ -413,7 +387,6 @@ fun BowelMovementScreen(
                     )
                 }
 
-                // Urgency Level Slider
                 Column(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -424,26 +397,23 @@ fun BowelMovementScreen(
                             text = "Urgency Level",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.SemiBold,
-                            color = Color.Black
+                            color = MaterialTheme.colorScheme.onSurface
                         )
-
                         Box(
                             modifier = Modifier
-                                .background(Color.Black, shape = MaterialTheme.shapes.medium)
+                                .background(MaterialTheme.colorScheme.onSurface, shape = MaterialTheme.shapes.medium)
                                 .padding(horizontal = 12.dp, vertical = 6.dp),
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
                                 text = urgencyLevel.toInt().toString(),
-                                color = Color.White,
+                                color = MaterialTheme.colorScheme.surface,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp
                             )
                         }
                     }
-
                     Spacer(modifier = Modifier.height(12.dp))
-
                     Slider(
                         value = urgencyLevel,
                         onValueChange = { urgencyLevel = it },
@@ -461,16 +431,12 @@ fun BowelMovementScreen(
                 HorizontalDivider(thickness = 1.dp, color = LightGray)
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Blood / Mucus Checkboxes
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.weight(1f)
-                    ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
                         Checkbox(
                             checked = hasBlood,
                             onCheckedChange = { hasBlood = it },
@@ -479,13 +445,9 @@ fun BowelMovementScreen(
                                 uncheckedColor = NeutralGray
                             )
                         )
-                        Text(text = "Blood", fontSize = 16.sp, color = Color.Black)
+                        Text(text = "Blood", fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
                     }
-
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.weight(1f)
-                    ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
                         Checkbox(
                             checked = hasMucus,
                             onCheckedChange = { hasMucus = it },
@@ -494,27 +456,26 @@ fun BowelMovementScreen(
                                 uncheckedColor = NeutralGray
                             )
                         )
-                        Text(text = "Mucus", fontSize = 16.sp, color = Color.Black)
+                        Text(text = "Mucus", fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
                     }
                 }
 
                 HorizontalDivider(thickness = 1.dp, color = LightGray)
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Notes Field
                 Column(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
                     Text(
                         text = "Notes (Optional)",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color.Black,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
-
                     OutlinedTextField(
                         value = notes,
                         onValueChange = { notes = it },
-                        modifier = Modifier.fillMaxWidth().height(100.dp),
+                        // FIX: heightIn instead of height(100.dp)
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 100.dp),
                         placeholder = { Text("Add any additional details...", color = NeutralGray) },
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = BellyGreenDark,
@@ -525,7 +486,6 @@ fun BowelMovementScreen(
                     )
                 }
 
-                // Save Button
                 Button(
                     onClick = {
                         if (selectedBristolType != null && selectedColor != null) {
@@ -535,7 +495,6 @@ fun BowelMovementScreen(
                             } catch (e: Exception) {
                                 timeFormatDB.format(Date())
                             }
-
                             val bowelMovement = BowelMovement(
                                 userId = 1,
                                 date = selectedDateDB,
@@ -548,10 +507,7 @@ fun BowelMovementScreen(
                                 mucus = hasMucus,
                                 notes = notes
                             )
-
                             viewModel.insertBowelMovement(bowelMovement)
-
-                            // Reset form
                             selectedBristolType = null
                             selectedColor = null
                             painLevel = 0f
@@ -561,7 +517,8 @@ fun BowelMovementScreen(
                             notes = ""
                         }
                     },
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    // FIX: heightIn instead of height(56.dp)
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
                     enabled = selectedBristolType != null && selectedColor != null,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = BellyGreenDark,
@@ -569,17 +526,12 @@ fun BowelMovementScreen(
                     ),
                     shape = MaterialTheme.shapes.medium
                 ) {
-                    Text(
-                        text = "Save Entry",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Text(text = "Save Entry", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 }
             }
 
             HorizontalDivider(thickness = 2.dp, color = LightGray)
 
-            // Saved Bowel Movements Section
             Column(
                 modifier = Modifier
                     .weight(0.4f)
@@ -591,22 +543,16 @@ fun BowelMovementScreen(
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     modifier = Modifier.padding(bottom = 12.dp)
                 )
-
                 if (savedBowelMovements.isEmpty()) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         Text(
                             "No bowel movements logged today",
-                            color = Color.Gray,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
                 } else {
-                    LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
+                    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(savedBowelMovements) { bm ->
                             SavedBowelMovementCard(
                                 bowelMovement = bm,
@@ -627,14 +573,13 @@ fun SavedBowelMovementCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        // FIX: theme surface
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(2.dp),
         border = BorderStroke(1.dp, LightGray)
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.Top
         ) {
@@ -643,18 +588,19 @@ fun SavedBowelMovementCard(
                     text = "${bowelMovement.consistency} - ${bowelMovement.color}",
                     fontWeight = FontWeight.Bold,
                     fontSize = 16.sp,
-                    color = Color.Black
+                    // FIX: theme color
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "Time: ${formatTime(bowelMovement.time)}",
                     fontSize = 14.sp,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )
                 Text(
                     text = "Pain: ${bowelMovement.painLevel}/10 | Urgency: ${bowelMovement.urgencyLevel}/10",
                     fontSize = 14.sp,
-                    color = Color.Gray
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                 )
                 if (bowelMovement.blood || bowelMovement.mucus) {
                     Text(
@@ -671,23 +617,17 @@ fun SavedBowelMovementCard(
                     Text(
                         text = bowelMovement.notes,
                         fontSize = 12.sp,
-                        color = Color.Gray.copy(alpha = 0.7f)
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                     )
                 }
             }
-
             IconButton(onClick = onDelete) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete",
-                    tint = Color.Red
-                )
+                Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete", tint = Color.Red)
             }
         }
     }
 }
 
-// Helper function to format time
 private fun formatTime(time: String): String {
     return try {
         val inputFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())

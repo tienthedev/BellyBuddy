@@ -2,6 +2,7 @@ package com.example.bellybuddy.userint.screen
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -26,6 +27,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.bellybuddy.R
 import com.example.bellybuddy.data.model.DailyJournal
 import com.example.bellybuddy.ui.theme.BellyGreen
+import com.example.bellybuddy.ui.theme.BellyGreenDark
 import com.example.bellybuddy.userint.component.DailyScoreCard
 import com.example.bellybuddy.userint.component.ReminderCard
 import com.example.bellybuddy.userint.component.WeightCard
@@ -83,6 +85,7 @@ fun DashboardScreen(
                         modifier = Modifier
                             .padding(end = 12.dp)
                             .size(50.dp)
+                            .clickable { onProfileClick?.invoke() }
                     ) {
                         Image(
                             painter = painterResource(id = R.drawable.profile_photo),
@@ -96,10 +99,7 @@ fun DashboardScreen(
             )
         },
         bottomBar = {
-            BottomToolBar(
-                selected = BottomItem.Home,
-                onSelect = onBottomSelect
-            )
+            BottomToolBar(selected = BottomItem.Home, onSelect = onBottomSelect)
         }
     ) { padding ->
         Column(
@@ -114,9 +114,7 @@ fun DashboardScreen(
 
             Text(
                 text = "$greeting, ${loggedInUser?.name ?: "User"}",
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.Bold
-                ),
+                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
                 modifier = Modifier.padding(vertical = 8.dp)
             )
 
@@ -124,29 +122,27 @@ fun DashboardScreen(
 
             Text(
                 text = "Today's Status",
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontWeight = FontWeight.Bold
-                ),
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                 modifier = Modifier.padding(bottom = 12.dp)
             )
 
+            // FIX: heightIn instead of height(150.dp) so cards grow with font size
             Row(Modifier.fillMaxWidth()) {
                 DailyScoreCard(
                     score = score,
                     showLabel = true,
                     modifier = Modifier
                         .weight(1f)
-                        .height(150.dp)
+                        .heightIn(min = 130.dp)
                         .padding(end = 8.dp),
                     onClick = { onDailyScoreClick?.invoke() }
                 )
-
                 WeightCard(
                     title = "Weight",
                     value = if (loggedInUser?.weight != null) "${loggedInUser?.weight} lbs" else "-- lbs",
                     modifier = Modifier
                         .weight(1f)
-                        .height(150.dp)
+                        .heightIn(min = 130.dp)
                         .padding(start = 8.dp),
                     onClick = { onWeightClick?.invoke() }
                 )
@@ -154,34 +150,32 @@ fun DashboardScreen(
 
             Spacer(Modifier.height(16.dp))
 
+            // FIX: heightIn instead of height(150.dp)
             ReminderCard(
                 title = "Reminder",
                 message = "Did you take your supplements?",
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(150.dp),
+                    .heightIn(min = 120.dp),
                 onClick = { onReminderClick?.invoke() }
             )
 
             Spacer(Modifier.height(16.dp))
 
+            // FIX: heightIn instead of height(230.dp)
             DailyJournalCard(
                 todayKey = today,
                 initialText = todaysEntry?.notes.orEmpty(),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(230.dp),
+                    .heightIn(min = 200.dp),
                 onSave = { text ->
                     val trimmed = text.trim()
                     if (trimmed.isEmpty()) return@DailyJournalCard
-
                     val existing = todaysEntry
                     if (existing != null) {
                         journalViewModel.updateJournalEntry(
-                            existing.copy(
-                                notes = trimmed,
-                                timeUpdated = System.currentTimeMillis()
-                            )
+                            existing.copy(notes = trimmed, timeUpdated = System.currentTimeMillis())
                         )
                     } else {
                         journalViewModel.insertJournalEntry(
@@ -220,7 +214,8 @@ private fun DailyJournalCard(
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        // FIX: theme surface instead of hardcoded Color.White
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
@@ -230,38 +225,26 @@ private fun DailyJournalCard(
         ) {
             Text(
                 text = "Daily Journal",
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontWeight = FontWeight.Bold
-                )
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
             )
-
             Spacer(Modifier.height(10.dp))
-
             OutlinedTextField(
                 value = journalText,
                 onValueChange = { journalText = it },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f),
-                placeholder = {
-                    Text("Write about your day...")
-                },
+                    .heightIn(min = 120.dp),
+                placeholder = { Text("Write about your day...") },
                 shape = RoundedCornerShape(18.dp),
                 singleLine = false,
                 maxLines = 8,
-                keyboardOptions = KeyboardOptions(
-                    imeAction = ImeAction.Done
-                )
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
             )
-
             Spacer(Modifier.height(12.dp))
-
             Button(
                 onClick = {
                     val trimmed = journalText.trim()
-                    if (trimmed.isNotEmpty()) {
-                        onSave(trimmed)
-                    }
+                    if (trimmed.isNotEmpty()) onSave(trimmed)
                 },
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
@@ -292,7 +275,8 @@ fun TodayStatusCards(
             pageSpacing = 0.dp,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(150.dp)
+                // FIX: heightIn instead of height(150.dp)
+                .heightIn(min = 130.dp)
         ) { page ->
             when (page) {
                 0 -> StatusCard(
@@ -302,7 +286,6 @@ fun TodayStatusCards(
                     emptyMessage = "No food logged today",
                     accentColor = BellyGreen
                 )
-
                 1 -> StatusCard(
                     title = "Symptoms",
                     iconRes = R.drawable.ic_symptoms,
@@ -310,7 +293,6 @@ fun TodayStatusCards(
                     emptyMessage = "No symptoms recorded",
                     accentColor = Color(0xFFFFA726)
                 )
-
                 2 -> StatusCard(
                     title = "Bowel Movement",
                     iconRes = R.drawable.ic_toilet,
@@ -360,12 +342,9 @@ private fun StatusCard(
             .fillMaxWidth()
             .fillMaxHeight(),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 4.dp
-        )
+        // FIX: theme surface instead of hardcoded Color.White
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
             modifier = Modifier
@@ -388,14 +367,10 @@ private fun StatusCard(
                         )
                     }
                 }
-
                 Spacer(Modifier.width(12.dp))
-
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold
-                    ),
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
@@ -412,11 +387,7 @@ private fun StatusCard(
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     items.take(3).forEach { item ->
                         Row(verticalAlignment = Alignment.Top) {
-                            Text(
-                                text = "•",
-                                color = accentColor,
-                                modifier = Modifier.padding(end = 6.dp)
-                            )
+                            Text(text = "•", color = accentColor, modifier = Modifier.padding(end = 6.dp))
                             Text(
                                 text = item,
                                 style = MaterialTheme.typography.bodyMedium,
@@ -424,7 +395,6 @@ private fun StatusCard(
                             )
                         }
                     }
-
                     if (items.size > 3) {
                         Spacer(Modifier.height(2.dp))
                         Text(
@@ -459,41 +429,20 @@ fun BottomToolBar(
             .navigationBarsPadding()
     ) {
         Row(
-            modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 10.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            ToolbarIcon(
-                item = BottomItem.Settings,
-                selected = selected == BottomItem.Settings,
-                onClick = { onSelect(BottomItem.Settings) },
-                painter = painterResource(R.drawable.settings)
-            )
-            ToolbarIcon(
-                item = BottomItem.Grid,
-                selected = selected == BottomItem.Grid,
-                onClick = { onSelect(BottomItem.Grid) },
-                painter = painterResource(R.drawable.grid)
-            )
-            ToolbarIcon(
-                item = BottomItem.Home,
-                selected = selected == BottomItem.Home,
-                onClick = { onSelect(BottomItem.Home) },
-                painter = painterResource(R.drawable.home)
-            )
-            ToolbarIcon(
-                item = BottomItem.Calendar,
-                selected = selected == BottomItem.Calendar,
-                onClick = { onSelect(BottomItem.Calendar) },
-                painter = painterResource(R.drawable.calendar)
-            )
-            ToolbarIcon(
-                item = BottomItem.Bell,
-                selected = selected == BottomItem.Bell,
-                onClick = { onSelect(BottomItem.Bell) },
-                painter = painterResource(R.drawable.bell)
-            )
+            ToolbarIcon(item = BottomItem.Settings, selected = selected == BottomItem.Settings,
+                onClick = { onSelect(BottomItem.Settings) }, painter = painterResource(R.drawable.settings))
+            ToolbarIcon(item = BottomItem.Grid, selected = selected == BottomItem.Grid,
+                onClick = { onSelect(BottomItem.Grid) }, painter = painterResource(R.drawable.grid))
+            ToolbarIcon(item = BottomItem.Home, selected = selected == BottomItem.Home,
+                onClick = { onSelect(BottomItem.Home) }, painter = painterResource(R.drawable.home))
+            ToolbarIcon(item = BottomItem.Calendar, selected = selected == BottomItem.Calendar,
+                onClick = { onSelect(BottomItem.Calendar) }, painter = painterResource(R.drawable.calendar))
+            ToolbarIcon(item = BottomItem.Bell, selected = selected == BottomItem.Bell,
+                onClick = { onSelect(BottomItem.Bell) }, painter = painterResource(R.drawable.bell))
         }
     }
 }
@@ -505,18 +454,10 @@ private fun ToolbarIcon(
     onClick: () -> Unit,
     painter: Painter
 ) {
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier.size(44.dp)
-    ) {
+    Box(contentAlignment = Alignment.Center, modifier = Modifier.size(44.dp)) {
         if (selected) {
-            Surface(
-                color = BellyGreen,
-                shape = CircleShape,
-                modifier = Modifier.size(36.dp)
-            ) {}
+            Surface(color = BellyGreen, shape = CircleShape, modifier = Modifier.size(36.dp)) {}
         }
-
         IconButton(onClick = onClick) {
             Icon(
                 painter = painter,

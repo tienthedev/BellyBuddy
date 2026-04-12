@@ -1,3 +1,6 @@
+// ============================================================
+// SymptomScreen.kt
+// ============================================================
 package com.example.bellybuddy.userint.screen
 
 import android.app.DatePickerDialog
@@ -38,195 +41,74 @@ fun SymptomScreen(
     val calendar = Calendar.getInstance()
     val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
     val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
-
-    // Date state
     var selectedDateString by remember { mutableStateOf(dateFormat.format(calendar.time)) }
     var displayDate by remember { mutableStateOf("Today") }
-
-    // Get symptoms for selected date from database
-    val savedSymptoms by viewModel.getSymptomsByDate(selectedDateString)
-        .collectAsState(initial = emptyList())
-
-    // Date picker dialog
-    val datePickerDialog = DatePickerDialog(
-        context,
-        { _, year, month, day ->
-            calendar.set(year, month, day)
-            selectedDateString = dateFormat.format(calendar.time)
-            displayDate = "${month + 1}/$day/$year"
-        },
-        calendar.get(Calendar.YEAR),
-        calendar.get(Calendar.MONTH),
-        calendar.get(Calendar.DAY_OF_MONTH)
-    )
-
-    // Symptom options and slider levels
-    val symptomOptions = listOf(
-        "Bloating", "Diarrhea", "Constipation", "Abdominal Pain",
-        "Irregular Stool", "Loss of Appetite", "Incomplete Evacuation"
-    )
+    val savedSymptoms by viewModel.getSymptomsByDate(selectedDateString).collectAsState(initial = emptyList())
+    val datePickerDialog = DatePickerDialog(context, { _, year, month, day ->
+        calendar.set(year, month, day)
+        selectedDateString = dateFormat.format(calendar.time)
+        displayDate = "${month + 1}/$day/$year"
+    }, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH))
+    val symptomOptions = listOf("Bloating", "Diarrhea", "Constipation", "Abdominal Pain", "Irregular Stool", "Loss of Appetite", "Incomplete Evacuation")
     val symptomLevels = remember { mutableStateMapOf<String, Float>() }
 
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        "Symptom Tracker",
-                        color = Color.Black,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
+                title = { Text("Symptom Tracker", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold) }, // FIX
                 navigationIcon = {
-                    TextButton(
-                        onClick = onBack,
-                        colors = ButtonDefaults.textButtonColors(
-                            contentColor = BellyGreenDark
-                        )
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
+                    TextButton(onClick = onBack, colors = ButtonDefaults.textButtonColors(contentColor = BellyGreenDark)) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.onSurface)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = Color.Black
+                    containerColor = MaterialTheme.colorScheme.surface, // FIX
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
                 )
             )
         },
-        bottomBar = {
-            BottomToolBar(
-                selected = BottomItem.Grid,
-                onSelect = onSelectBottom
-            )
-        },
-        containerColor = Color.White
+        bottomBar = { BottomToolBar(selected = BottomItem.Grid, onSelect = onSelectBottom) },
+        containerColor = MaterialTheme.colorScheme.surface // FIX
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.White)
-                .padding(padding)
-                .padding(16.dp)
-        ) {
-            // Date Button
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                contentAlignment = Alignment.Center
-            ) {
+        Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface).padding(padding).padding(16.dp)) {
+            Box(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp), contentAlignment = Alignment.Center) {
                 OutlinedButton(
                     onClick = { datePickerDialog.show() },
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = Color.White,
-                        contentColor = Color.Black
-                    ),
+                    colors = ButtonDefaults.outlinedButtonColors(containerColor = MaterialTheme.colorScheme.surface, contentColor = MaterialTheme.colorScheme.onSurface), // FIX
                     border = BorderStroke(1.dp, NeutralGray)
-                ) {
-                    Text(displayDate)
-                }
+                ) { Text(displayDate) }
             }
-
             HorizontalDivider(thickness = 1.dp, color = LightGray)
             Spacer(modifier = Modifier.height(16.dp))
-
-            // Symptom Input Section
-            Text(
-                "Log New Symptoms",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-
-            LazyColumn(
-                modifier = Modifier
-                    .weight(0.5f)
-                    .fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
+            Text("Log New Symptoms", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), modifier = Modifier.padding(bottom = 8.dp))
+            LazyColumn(modifier = Modifier.weight(0.5f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(symptomOptions) { symptom ->
-                    SymptomSliderCard(
-                        symptom = symptom,
-                        level = symptomLevels[symptom] ?: 0f,
-                        onLevelChange = { newValue ->
-                            symptomLevels[symptom] = newValue
-                        }
-                    )
+                    SymptomSliderCard(symptom = symptom, level = symptomLevels[symptom] ?: 0f, onLevelChange = { symptomLevels[symptom] = it })
                 }
             }
-
             Spacer(modifier = Modifier.height(12.dp))
-
-            // Save Button
             Button(
                 onClick = {
                     val currentTime = timeFormat.format(Date())
-                    val symptomsToSave = symptomLevels
-                        .filter { it.value > 0 }
-                        .map { (name, level) ->
-                            Symptom(
-                                userId = 1,
-                                date = selectedDateString,
-                                time = currentTime,
-                                symptomType = name,
-                                intensity = level.toInt()
-                            )
-                        }
-
-                    if (symptomsToSave.isNotEmpty()) {
-                        viewModel.insertMultipleSymptoms(symptomsToSave) { }
-                        symptomLevels.clear()
+                    val symptomsToSave = symptomLevels.filter { it.value > 0 }.map { (name, level) ->
+                        Symptom(userId = 1, date = selectedDateString, time = currentTime, symptomType = name, intensity = level.toInt())
                     }
+                    if (symptomsToSave.isNotEmpty()) { viewModel.insertMultipleSymptoms(symptomsToSave) {}; symptomLevels.clear() }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = BellyGreenDark,
-                    contentColor = Color.White
-                )
-            ) {
-                Text("Save Symptoms", fontWeight = FontWeight.Bold)
-            }
-
+                colors = ButtonDefaults.buttonColors(containerColor = BellyGreenDark, contentColor = Color.White)
+            ) { Text("Save Symptoms", fontWeight = FontWeight.Bold) }
             Spacer(modifier = Modifier.height(16.dp))
             HorizontalDivider(thickness = 1.dp, color = LightGray)
             Spacer(modifier = Modifier.height(16.dp))
-
-            // Saved Symptoms Section
-            Text(
-                "Saved Symptoms for $displayDate",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-
+            Text("Saved Symptoms for $displayDate", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), modifier = Modifier.padding(bottom = 8.dp))
             if (savedSymptoms.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .weight(0.5f)
-                        .fillMaxWidth(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        "No symptoms logged for this date",
-                        color = Color.Gray,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
+                Box(modifier = Modifier.weight(0.5f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    Text("No symptoms logged for this date", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f), style = MaterialTheme.typography.bodyMedium) // FIX
                 }
             } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .weight(0.5f)
-                        .fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(savedSymptoms) { symptom ->
-                        SavedSymptomCard(
-                            symptom = symptom,
-                            onDelete = { viewModel.deleteSymptom(symptom) }
-                        )
-                    }
+                LazyColumn(modifier = Modifier.weight(0.5f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(savedSymptoms) { symptom -> SavedSymptomCard(symptom = symptom, onDelete = { viewModel.deleteSymptom(symptom) }) }
                 }
             }
         }
@@ -234,102 +116,29 @@ fun SymptomScreen(
 }
 
 @Composable
-fun SymptomSliderCard(
-    symptom: String,
-    level: Float,
-    onLevelChange: (Float) -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = SurfaceLight),
-        elevation = CardDefaults.cardElevation(2.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = symptom,
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
-                color = Color.Black
-            )
-
+fun SymptomSliderCard(symptom: String, level: Float, onLevelChange: (Float) -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = SurfaceLight), elevation = CardDefaults.cardElevation(2.dp)) {
+        Column(modifier = Modifier.padding(16.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(text = symptom, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface) // FIX
             Spacer(modifier = Modifier.height(12.dp))
-
-            Slider(
-                value = level,
-                onValueChange = onLevelChange,
-                valueRange = 0f..10f,
-                steps = 9,
-                colors = SliderDefaults.colors(
-                    thumbColor = BellyGreenDark,
-                    activeTrackColor = BellyGreenDark,
-                    inactiveTrackColor = LightGray
-                ),
-                modifier = Modifier.fillMaxWidth(0.9f)
-            )
-
-            Box(
-                modifier = Modifier
-                    .padding(top = 4.dp)
-                    .background(Color.Black, shape = RoundedCornerShape(12.dp))
-                    .padding(horizontal = 10.dp, vertical = 4.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = level.toInt().toString(),
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
-                )
+            Slider(value = level, onValueChange = onLevelChange, valueRange = 0f..10f, steps = 9, colors = SliderDefaults.colors(thumbColor = BellyGreenDark, activeTrackColor = BellyGreenDark, inactiveTrackColor = LightGray), modifier = Modifier.fillMaxWidth(0.9f))
+            Box(modifier = Modifier.padding(top = 4.dp).background(MaterialTheme.colorScheme.onSurface, shape = RoundedCornerShape(12.dp)).padding(horizontal = 10.dp, vertical = 4.dp), contentAlignment = Alignment.Center) { // FIX
+                Text(text = level.toInt().toString(), color = MaterialTheme.colorScheme.surface, fontWeight = FontWeight.Bold, fontSize = 14.sp) // FIX
             }
         }
     }
 }
 
 @Composable
-fun SavedSymptomCard(
-    symptom: Symptom,
-    onDelete: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(2.dp),
-        border = BorderStroke(1.dp, LightGray)
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+fun SavedSymptomCard(symptom: Symptom, onDelete: () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), elevation = CardDefaults.cardElevation(2.dp), border = BorderStroke(1.dp, LightGray)) { // FIX
+        Row(modifier = Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = symptom.symptomType,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp,
-                    color = Color.Black
-                )
+                Text(text = symptom.symptomType, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface) // FIX
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Intensity: ${symptom.intensity}/10",
-                    fontSize = 14.sp,
-                    color = Color.Gray
-                )
+                Text(text = "Intensity: ${symptom.intensity}/10", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)) // FIX
             }
-
-            IconButton(onClick = onDelete) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete symptom",
-                    tint = Color.Red
-                )
-            }
+            IconButton(onClick = onDelete) { Icon(Icons.Default.Delete, contentDescription = "Delete symptom", tint = Color.Red) }
         }
     }
 }

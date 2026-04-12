@@ -24,16 +24,21 @@ fun InitialProfileScreen(
     var height by remember { mutableStateOf("") }
     var healthConditions by remember { mutableStateOf("") }
 
-    Box(
+    // FIX: Replace the centering Box+Card with a plain scrollable Column.
+    // The old Box(contentAlignment = Center) fought with the IME (keyboard),
+    // causing the card to get clipped. A top-aligned scrollable Column lets
+    // the keyboard push content up naturally without clipping anything.
+    Column(
         modifier = modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(24.dp),
-        contentAlignment = Alignment.Center
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Spacer(Modifier.height(32.dp))
+
         Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight(),
+            modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(28.dp),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface
@@ -43,9 +48,8 @@ fun InitialProfileScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(32.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.Center,
+                    .padding(32.dp),
+                verticalArrangement = Arrangement.Top,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
@@ -149,7 +153,7 @@ fun InitialProfileScreen(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(56.dp),
+                        .heightIn(min = 56.dp), // FIX: heightIn instead of height so text never clips
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = BellyGreen,
@@ -165,5 +169,7 @@ fun InitialProfileScreen(
                 }
             }
         }
+
+        Spacer(Modifier.height(32.dp))
     }
 }
