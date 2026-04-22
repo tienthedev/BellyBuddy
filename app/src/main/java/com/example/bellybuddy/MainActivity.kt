@@ -3,6 +3,7 @@ package com.example.bellybuddy
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.example.bellybuddy.navigation.AppNavHost
@@ -13,6 +14,10 @@ import com.example.bellybuddy.viewmodel.UserViewModelFactory
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+
+
         setContent {
             // Create UserViewModel scoped to the Activity so it's shared across all screens
             val userViewModel: UserViewModel = viewModel(

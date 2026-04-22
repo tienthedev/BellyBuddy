@@ -1,17 +1,21 @@
 package com.example.bellybuddy.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.bellybuddy.userint.screen.*
 import com.example.bellybuddy.viewmodel.UserViewModel
+import androidx.compose.runtime.collectAsState
 
 @Composable
 fun AppNavHost(
     navController: NavHostController,
     userViewModel: UserViewModel
+
 ) {
+    val loggedInUser = userViewModel.loggedInUser.collectAsState().value
     // Helper to navigate without piling up duplicates of top-level screens
     fun go(route: Route) {
         navController.navigate(route.path) {
@@ -165,6 +169,7 @@ fun AppNavHost(
 
         composable(Route.Profile.path) {
             ProfileScreen(
+                userViewModel = userViewModel,
                 onSelectBottom = { item ->
                     when (item) {
                         BottomItem.Home -> go(Route.Dashboard)
@@ -242,7 +247,18 @@ fun AppNavHost(
 
         composable(Route.EditProfile.path) {
             EditProfileScreen(
-                onSave = { _, _, _ -> go(Route.Profile) },
+                currentName = loggedInUser?.name ?: "",
+                currentEmail = loggedInUser?.email ?: "",
+                onSave = { name, email, password ->
+                    loggedInUser?.let { currentUser ->
+                        val updatedUser = currentUser.copy(
+                            name = name.trim(),
+                            email = email.trim()
+                        )
+                        userViewModel.updateUser(updatedUser)
+                    }
+                    go(Route.Profile)
+                },
                 onBack = { go(Route.Profile) }
             )
         }
@@ -265,6 +281,7 @@ fun AppNavHost(
 
         composable(Route.Weight.path) {
             WeightScreen(
+                userViewModel = userViewModel,
                 onBottomSelect = { item ->
                     when (item) {
                         BottomItem.Home     -> go(Route.Dashboard)

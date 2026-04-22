@@ -14,19 +14,23 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.sp
 import com.example.bellybuddy.R
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,34 +72,42 @@ fun GridScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(features) { (title, imageRes, click) ->
-                val shape = RoundedCornerShape(12.dp)
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .aspectRatio(1f)
                         .clickable { click() },
-                    shape = shape,
+                    shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.White),
                     elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
                     border = BorderStroke(1.dp, Color(0xFFE6E6E6))
                 ) {
-                    Box(
+                    // FIX: Replace Box (where image Center overlapped text TopCenter)
+                    // with a Column that stacks title on top, image below.
+                    // This guarantees text is never covered regardless of screen density.
+                    Column(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(12.dp)
+                            .padding(12.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
                             text = title,
                             color = Color.Black,
-                            modifier = Modifier.align(Alignment.TopCenter)
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            textAlign = TextAlign.Center,
+                            maxLines = 2,
+                            lineHeight = 17.sp
                         )
                         Image(
                             painter = painterResource(id = imageRes),
                             contentDescription = title,
                             modifier = Modifier
-                                .align(Alignment.Center)
-                                .fillMaxWidth(0.7f)
-                                .aspectRatio(1f),
+                                .weight(1f)
+                                .fillMaxWidth(0.65f)
+                                .padding(top = 8.dp),
                             contentScale = ContentScale.Fit
                         )
                     }

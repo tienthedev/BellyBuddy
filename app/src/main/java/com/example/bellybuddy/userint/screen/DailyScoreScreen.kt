@@ -1,3 +1,6 @@
+// ============================================================
+// DailyScoreScreen.kt
+// ============================================================
 package com.example.bellybuddy.userint.screen
 
 import androidx.compose.foundation.layout.*
@@ -15,84 +18,34 @@ import com.example.bellybuddy.userint.component.DailyScoreCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DailyScoreScreen(
-    onBottomSelect: (BottomItem) -> Unit,
-    onBack: () -> Unit = {},
-    score: Int
-) {
+fun DailyScoreScreen(onBottomSelect: (BottomItem) -> Unit, onBack: () -> Unit = {}, score: Int) {
     val (label, labelColor) = scoreLabel(score)
-
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = "Daily Score",
-                        color = Color.Black,
-                        fontWeight = FontWeight.Bold
-                    )
-                },
+                title = { Text("Daily Score", color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold) }, // FIX
                 navigationIcon = {
-                    TextButton(
-                        onClick = onBack,
-                        colors = ButtonDefaults.textButtonColors(
-                            contentColor = BellyGreenDark
-                        )
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back",
-                            tint = BellyGreenDark
-                        )
+                    TextButton(onClick = onBack, colors = ButtonDefaults.textButtonColors(contentColor = BellyGreenDark)) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = BellyGreenDark)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = Color.Black
-                )
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface, titleContentColor = MaterialTheme.colorScheme.onSurface) // FIX
             )
         },
-        bottomBar = {
-            BottomToolBar(
-                selected = BottomItem.Grid,
-                onSelect = onBottomSelect
-            )
-        }
+        bottomBar = { BottomToolBar(selected = BottomItem.Grid, onSelect = onBottomSelect) }
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-                DailyScoreCard(
-                    score = score,
-                    showLabel = false,
-                    modifier = Modifier.width(220.dp)
-                )
+        Column(modifier = Modifier.fillMaxSize().padding(padding).padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                DailyScoreCard(score = score, showLabel = false, modifier = Modifier.width(220.dp))
             }
-
             Spacer(modifier = Modifier.height(16.dp))
-
-            Text(
-                text = label,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                color = labelColor
-            )
+            Text(text = label, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = labelColor)
         }
     }
 }
 
-private fun scoreLabel(score: Int): Pair<String, Color> {
-    return when {
-        score >= 80 -> "Excellent" to Color(0xFF5CB85C)
-        score >= 60 -> "Okay" to Color(0xFFF0AD4E)
-        else -> "Bad" to Color(0xFFD9534F)
-    }
+private fun scoreLabel(score: Int): Pair<String, Color> = when {
+    score >= 80 -> "Excellent" to Color(0xFF5CB85C)
+    score >= 60 -> "Okay" to Color(0xFFF0AD4E)
+    else -> "Bad" to Color(0xFFD9534F)
 }
