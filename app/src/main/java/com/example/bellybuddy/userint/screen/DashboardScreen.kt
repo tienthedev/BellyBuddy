@@ -127,22 +127,27 @@ fun DashboardScreen(
             )
 
             // FIX: heightIn instead of height(150.dp) so cards grow with font size
-            Row(Modifier.fillMaxWidth()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Min)
+            ) {
                 DailyScoreCard(
                     score = score,
                     showLabel = true,
                     modifier = Modifier
                         .weight(1f)
-                        .heightIn(min = 130.dp)
+                        .fillMaxHeight()
                         .padding(end = 8.dp),
                     onClick = { onDailyScoreClick?.invoke() }
                 )
+
                 WeightCard(
                     title = "Weight",
                     value = if (loggedInUser?.weight != null) "${loggedInUser?.weight} lbs" else "-- lbs",
                     modifier = Modifier
                         .weight(1f)
-                        .heightIn(min = 130.dp)
+                        .fillMaxHeight()
                         .padding(start = 8.dp),
                     onClick = { onWeightClick?.invoke() }
                 )
@@ -214,8 +219,7 @@ private fun DailyJournalCard(
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(24.dp),
-        // FIX: theme surface instead of hardcoded Color.White
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(
@@ -342,8 +346,7 @@ private fun StatusCard(
             .fillMaxWidth()
             .fillMaxHeight(),
         shape = RoundedCornerShape(24.dp),
-        // FIX: theme surface instead of hardcoded Color.White
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Column(

@@ -32,21 +32,26 @@ fun WeightCard(
                 .padding(16.dp),
             contentAlignment = Alignment.Center
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
                 Text(
                     text = value,
-                    style = MaterialTheme.typography.headlineSmall.copy(
+                    style = MaterialTheme.typography.headlineMedium.copy(
                         fontWeight = FontWeight.Bold
                     ),
                     color = Color.Black
                 )
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.titleMedium,
                     color = Color.Gray
                 )
             }

@@ -241,7 +241,8 @@ fun AppNavHost(
                         BottomItem.Bell     -> go(Route.Bell)
                     }
                 },
-                onBack = { go(Route.Grid) }
+                onBack = { go(Route.Grid) },
+                currentUserId = userViewModel.loggedInUser.value?.id ?: 0
             )
         }
 
