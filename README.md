@@ -2,7 +2,14 @@
 
 BellyBuddy is an Android application built to demonstrate modern mobile development practices. It serves as a foundation for a personal health tracker, allowing users to register, log in, and view user-specific data from a local database. The project emphasizes clean architecture, a reactive UI, and robust data persistence.
 
+---
 
+## 🚀 Installation
+
+*   **Download ZIP Folder**: ZIP can be found in our distribution system or upon request.
+*   **Upzip the folder**: The ZIP folder can be found in your download folder within the file app.
+*   **Double on the APK**: This will install the APK straight into your phone.
+---
 
 ---
 
